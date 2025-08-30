@@ -44,8 +44,12 @@ void VkImg2DApp::createInstance()
 
     glfwExts = glfwGetRequiredInstanceExtensions(&glfwExtCount);
 
-    createInfo.enabledExtensionCount = glfwExtCount;
-    createInfo.ppEnabledExtensionNames = glfwExts;
+    std::vector<const char*> exts(glfwExts, glfwExts + glfwExtCount);
+    exts.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+
+    createInfo.enabledExtensionCount = (uint32_t)exts.size();
+    createInfo.ppEnabledExtensionNames = exts.data();
+    createInfo.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
 
     createInfo.enabledLayerCount = 0;
 
@@ -63,6 +67,8 @@ void VkImg2DApp::mainLoop()
 
 void VkImg2DApp::cleanup()
 {
+    vkDestroyInstance(mInstance, nullptr);
+
     glfwDestroyWindow(mWindow);
     glfwTerminate();
 }
