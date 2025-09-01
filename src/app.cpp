@@ -43,6 +43,9 @@ void VkImg2DApp::initVulkan()
     createInstance();
     setupDebugMessenger();
     printExtensions();
+
+    pickPhysicalDevice();
+    createLogicalDevice();
 }
 
 void VkImg2DApp::createInstance()
@@ -108,6 +111,100 @@ void VkImg2DApp::printExtensions()
     for (const auto& ext : exts) {
         std::cout << "\t" << ext.extensionName << "\n";
     }
+}
+
+void VkImg2DApp::pickPhysicalDevice()
+{
+    VkPhysicalDevice physicalDevice = VK_NULL_HANDLE;
+    uint32_t deviceScore = 0;
+
+    uint32_t count = 0;
+    vkEnumeratePhysicalDevices(mInstance, &count, nullptr);
+
+    if (count == 0) {
+        throw std::runtime_error("No found GPUs for Vulkan.");
+    }
+
+    std::vector<VkPhysicalDevice> devices(count);
+    vkEnumeratePhysicalDevices(mInstance, &count, devices.data());
+
+    std::cout << "GPU devices:\n";
+
+    for (const auto& device : devices) {
+        std::cout << device << "\n";
+        auto score = getDeviceScore(device);
+
+        if (score > deviceScore) {
+            physicalDevice = device;
+            deviceScore = score;
+            break;
+        }
+    }
+
+    if (physicalDevice == VK_NULL_HANDLE) {
+        throw std::runtime_error("No suitable GPU found.");
+    }
+
+    mPhysicalDevice = physicalDevice;
+}
+
+QueueFamilyIndices VkImg2DApp::findDeviceFamilies(VkPhysicalDevice device)
+{
+    QueueFamilyIndices indices{};
+
+    uint32_t familyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &familyCount, nullptr);
+
+    std::vector<VkQueueFamilyProperties> families(familyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(device, &familyCount, families.data());
+
+    for (uint32_t i = 0; i < families.size(); i++) {
+        const auto& family = families[i];
+        if (family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+            indices.graphicsFamily = i;
+        }
+
+        if (indices.isComplete()) {
+            break;
+        }
+    }
+
+    return indices;
+}
+
+uint32_t VkImg2DApp::getDeviceScore(VkPhysicalDevice device)
+{
+    uint32_t score = 0;
+
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(device, &props);
+
+    switch (props.deviceType)
+    {
+    case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU:
+        score += 100;
+        break;
+    case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU:
+        score += 99;
+        break;
+    default:
+        break;
+    }
+
+    VkPhysicalDeviceFeatures features;
+    vkGetPhysicalDeviceFeatures(device, &features);
+
+    auto families = findDeviceFamilies(device);
+
+    if (!families.isComplete()) {
+        return 0;
+    }
+
+    return score;
+}
+
+void VkImg2DApp::createLogicalDevice()
+{
 }
 
 void VkImg2DApp::setupDebugMessenger()

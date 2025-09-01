@@ -19,6 +19,14 @@ const std::vector<const char*> validationLayers = {
     const bool enableValidationLayers = false;
 #endif
 
+struct QueueFamilyIndices {
+    std::optional<uint32_t> graphicsFamily;
+
+    bool isComplete() {
+        return graphicsFamily.has_value();
+    }
+};
+
 class VkImg2DApp {
 public:
     void run();
@@ -28,6 +36,11 @@ public:
     void initVulkan();
     void createInstance();
     static void printExtensions();
+
+    void pickPhysicalDevice();
+    QueueFamilyIndices findDeviceFamilies(VkPhysicalDevice device);
+    uint32_t getDeviceScore(VkPhysicalDevice device);
+    void createLogicalDevice();
 
     void setupDebugMessenger();
     static void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
@@ -47,4 +60,5 @@ private:
 
     VkInstance mInstance;
     VkDebugUtilsMessengerEXT mDebugMessenger;
+    VkPhysicalDevice mPhysicalDevice;
 };
