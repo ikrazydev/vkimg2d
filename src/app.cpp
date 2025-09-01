@@ -131,7 +131,10 @@ void VkImg2DApp::pickPhysicalDevice()
     std::cout << "GPU devices:\n";
 
     for (const auto& device : devices) {
-        std::cout << device << "\n";
+        VkPhysicalDeviceProperties props{};
+        vkGetPhysicalDeviceProperties(device, &props);
+
+        std::cout << props.deviceName << "\n";
         auto score = getDeviceScore(device);
 
         if (score > deviceScore) {
@@ -205,6 +208,40 @@ uint32_t VkImg2DApp::getDeviceScore(VkPhysicalDevice device)
 
 void VkImg2DApp::createLogicalDevice()
 {
+    auto families = findDeviceFamilies(mPhysicalDevice);
+
+    VkDeviceQueueCreateInfo queueCreateInfo{};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = families.graphicsFamily.value();
+    queueCreateInfo.queueCount = 1;
+
+    float queuePriority = 1.0f;
+    queueCreateInfo.pQueuePriorities = &queuePriority;
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
+
+    VkDeviceCreateInfo deviceCreateInfo{};
+    deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+    deviceCreateInfo.pQueueCreateInfos = &queueCreateInfo;
+    deviceCreateInfo.queueCreateInfoCount = 1;
+    deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
+
+    const char* exts[1] = { "VK_KHR_portability_subset" };
+    deviceCreateInfo.enabledExtensionCount = 1;
+    deviceCreateInfo.ppEnabledExtensionNames = exts;
+
+    deviceCreateInfo.enabledLayerCount = 0;
+
+    if (enableValidationLayers) {
+        deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
+        deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+    }
+
+    if (vkCreateDevice(mPhysicalDevice, &deviceCreateInfo, nullptr, &mDevice) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create a logical device.");
+    }
+
+    vkGetDeviceQueue(mDevice, families.graphicsFamily.value(), 0, &mGraphicsQueue);
 }
 
 void VkImg2DApp::setupDebugMessenger()
@@ -272,6 +309,8 @@ void VkImg2DApp::mainLoop()
 
 void VkImg2DApp::cleanup()
 {
+    vkDestroyDevice(mDevice, nullptr);
+
     if (enableValidationLayers) {
         _destroyDebugUtilsMessengerEXT(mInstance, mDebugMessenger, nullptr);
     }

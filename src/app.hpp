@@ -60,5 +60,9 @@ private:
 
     VkInstance mInstance;
     VkDebugUtilsMessengerEXT mDebugMessenger;
+
     VkPhysicalDevice mPhysicalDevice;
+    VkDevice mDevice;
+
+    VkQueue mGraphicsQueue;
 };
