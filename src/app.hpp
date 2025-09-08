@@ -21,9 +21,10 @@ const std::vector<const char*> validationLayers = {
 
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> presentFamily;
 
     bool isComplete() {
-        return graphicsFamily.has_value();
+        return graphicsFamily.has_value() && presentFamily.has_value();
     }
 };
 
@@ -37,11 +38,6 @@ public:
     void createInstance();
     static void printExtensions();
 
-    void pickPhysicalDevice();
-    QueueFamilyIndices findDeviceFamilies(VkPhysicalDevice device);
-    uint32_t getDeviceScore(VkPhysicalDevice device);
-    void createLogicalDevice();
-
     void setupDebugMessenger();
     static void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
     static bool verifyValidationLayerSupport();
@@ -52,6 +48,13 @@ public:
         void* pUserData
     );
 
+    void pickPhysicalDevice();
+    QueueFamilyIndices findDeviceFamilies(VkPhysicalDevice device);
+    uint32_t getDeviceScore(VkPhysicalDevice device);
+    void createLogicalDevice();
+
+    void createSurface();
+    
     void mainLoop();
 
     void cleanup();
@@ -61,8 +64,11 @@ private:
     VkInstance mInstance;
     VkDebugUtilsMessengerEXT mDebugMessenger;
 
+    VkSurfaceKHR mSurface;
+
     VkPhysicalDevice mPhysicalDevice;
     VkDevice mDevice;
 
     VkQueue mGraphicsQueue;
+    VkQueue mPresentQueue;
 };
