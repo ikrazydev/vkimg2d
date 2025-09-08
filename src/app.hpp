@@ -72,6 +72,7 @@ public:
     VkPresentModeKHR choosePresentMode(const std::vector<VkPresentModeKHR>& presentModes);
     VkExtent2D chooseExtent2D(const VkSurfaceCapabilitiesKHR& capabilities);
     void createSwapchain();
+    void createSwapchainImageViews();
     
     void mainLoop();
 
@@ -89,6 +90,7 @@ private:
 
     VkSwapchainKHR mSwapchain;
     std::vector<VkImage> mSwapchainImages;
+    std::vector<VkImageView> mSwapchainImageViews;
     VkFormat mSwapchainFormat;
     VkExtent2D mSwapchainExtent;
 
