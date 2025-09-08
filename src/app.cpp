@@ -1,6 +1,7 @@
 #include "app.hpp"
 
 #include <iostream>
+#include <fstream>
 #include <set>
 
 static VkResult _createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
@@ -52,6 +53,8 @@ void VkImg2DApp::initVulkan()
 
     createSwapchain();
     createSwapchainImageViews();
+
+    createGraphicsPipeline();
 }
 
 void VkImg2DApp::createInstance()
@@ -443,6 +446,66 @@ void VkImg2DApp::createSwapchainImageViews()
             throw std::runtime_error("Failed to create image view");
         }
     }
+}
+
+std::vector<char> VkImg2DApp::readFile(const std::string& filename)
+{
+    std::ifstream file(filename, std::ios::ate | std::ios::binary);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file.");
+    }
+
+    auto fileSize = (size_t)file.tellg();
+    std::vector<char> buffer(fileSize);
+
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+
+    file.close();
+
+    return buffer;
+}
+
+VkShaderModule VkImg2DApp::createShaderModule(const std::vector<char>& bytecode)
+{
+    VkShaderModuleCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    createInfo.codeSize = bytecode.size();
+    createInfo.pCode = reinterpret_cast<const uint32_t*>(bytecode.data());
+
+    VkShaderModule shaderModule;
+    if (vkCreateShaderModule(mDevice, &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create shader module.");
+    }
+
+    return shaderModule;
+}
+
+void VkImg2DApp::createGraphicsPipeline()
+{
+    auto vertexShaderCode = readFile("shaders/vertex.glsl");
+    auto fragmentShaderCode = readFile("shaders/fragment.glsl");
+
+    auto vertexShaderModule = createShaderModule(vertexShaderCode);
+    auto fragmentShaderModule = createShaderModule(fragmentShaderCode);
+
+    vkDestroyShaderModule(mDevice, vertexShaderModule, nullptr);
+    vkDestroyShaderModule(mDevice, fragmentShaderModule, nullptr);
+
+    VkPipelineShaderStageCreateInfo vertexShaderCreateInfo{};
+    vertexShaderCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    vertexShaderCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+    vertexShaderCreateInfo.module = vertexShaderModule;
+    vertexShaderCreateInfo.pName = "main";
+
+    VkPipelineShaderStageCreateInfo fragmentShaderCreateInfo{};
+    fragmentShaderCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    fragmentShaderCreateInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+    fragmentShaderCreateInfo.module = fragmentShaderModule;
+    fragmentShaderCreateInfo.pName = "main";
+
+    VkPipelineShaderStageCreateInfo shaderStages[] = { vertexShaderCreateInfo, fragmentShaderCreateInfo };
 }
 
 void VkImg2DApp::setupDebugMessenger()

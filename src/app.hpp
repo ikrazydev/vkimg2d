@@ -73,6 +73,10 @@ public:
     VkExtent2D chooseExtent2D(const VkSurfaceCapabilitiesKHR& capabilities);
     void createSwapchain();
     void createSwapchainImageViews();
+
+    static std::vector<char> readFile(const std::string& filename);
+    VkShaderModule createShaderModule(const std::vector<char>& bytecode);
+    void createGraphicsPipeline();
     
     void mainLoop();
 
