@@ -102,6 +102,7 @@ private:
 
     VkRenderPass mRenderPass;
     VkPipelineLayout mPipelineLayout;
+    VkPipeline mPipeline;
 
     VkQueue mGraphicsQueue;
     VkQueue mPresentQueue;
