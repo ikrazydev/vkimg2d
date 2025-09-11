@@ -98,6 +98,8 @@ private:
     VkFormat mSwapchainFormat;
     VkExtent2D mSwapchainExtent;
 
+    VkPipelineLayout mPipelineLayout;
+
     VkQueue mGraphicsQueue;
     VkQueue mPresentQueue;
 };
