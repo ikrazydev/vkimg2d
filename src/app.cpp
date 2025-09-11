@@ -56,6 +56,8 @@ void VkImg2DApp::initVulkan()
 
     createRenderPass();
     createGraphicsPipeline();
+
+    createFramebuffers();
 }
 
 void VkImg2DApp::createInstance()
@@ -669,6 +671,30 @@ void VkImg2DApp::createGraphicsPipeline()
     vkDestroyShaderModule(mDevice, fragmentShaderModule, nullptr);
 }
 
+void VkImg2DApp::createFramebuffers()
+{
+    mSwapchainFramebuffers.resize(mSwapchainImageViews.size());
+
+    for (size_t i = 0; i < mSwapchainImageViews.size(); i++) {
+        VkImageView attachments[] = {
+            mSwapchainImageViews[i],
+        };
+
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = mRenderPass;
+        framebufferInfo.attachmentCount = 1;
+        framebufferInfo.pAttachments = attachments;
+        framebufferInfo.width = mSwapchainExtent.width;
+        framebufferInfo.height = mSwapchainExtent.height;
+        framebufferInfo.layers = 1;
+
+        if (vkCreateFramebuffer(mDevice, &framebufferInfo, nullptr, &mSwapchainFramebuffers[i]) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create framebuffer.");
+        }
+    }
+}
+
 void VkImg2DApp::setupDebugMessenger()
 {
     if (!enableValidationLayers) return;
@@ -734,6 +760,10 @@ void VkImg2DApp::mainLoop()
 
 void VkImg2DApp::cleanup()
 {
+    for (auto framebuffer : mSwapchainFramebuffers) {
+        vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
+    }
+
     vkDestroyPipeline(mDevice, mPipeline, nullptr);
     vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
     vkDestroyRenderPass(mDevice, mRenderPass, nullptr);

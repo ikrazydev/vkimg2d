@@ -79,6 +79,8 @@ public:
     static std::vector<char> readFile(const std::string& filename);
     VkShaderModule createShaderModule(const std::vector<char>& bytecode);
     void createGraphicsPipeline();
+
+    void createFramebuffers();
     
     void mainLoop();
 
@@ -97,6 +99,7 @@ private:
     VkSwapchainKHR mSwapchain;
     std::vector<VkImage> mSwapchainImages;
     std::vector<VkImageView> mSwapchainImageViews;
+    std::vector<VkFramebuffer> mSwapchainFramebuffers;
     VkFormat mSwapchainFormat;
     VkExtent2D mSwapchainExtent;
 
