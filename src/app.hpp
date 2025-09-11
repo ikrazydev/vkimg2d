@@ -79,8 +79,11 @@ public:
     static std::vector<char> readFile(const std::string& filename);
     VkShaderModule createShaderModule(const std::vector<char>& bytecode);
     void createGraphicsPipeline();
-
     void createFramebuffers();
+
+    void createCommandPool();
+    void createCommandBuffer();
+    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
     
     void mainLoop();
 
@@ -109,4 +112,7 @@ private:
 
     VkQueue mGraphicsQueue;
     VkQueue mPresentQueue;
+
+    VkCommandPool mCommandPool;
+    VkCommandBuffer mCommandBuffer;
 };

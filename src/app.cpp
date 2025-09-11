@@ -56,8 +56,10 @@ void VkImg2DApp::initVulkan()
 
     createRenderPass();
     createGraphicsPipeline();
-
     createFramebuffers();
+
+    createCommandPool();
+    createCommandBuffer();
 }
 
 void VkImg2DApp::createInstance()
@@ -695,6 +697,82 @@ void VkImg2DApp::createFramebuffers()
     }
 }
 
+void VkImg2DApp::createCommandPool()
+{
+    auto families = findDeviceFamilies(mPhysicalDevice);
+
+    VkCommandPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.queueFamilyIndex = families.graphicsFamily.value();
+
+    if (vkCreateCommandPool(mDevice, &poolInfo, nullptr, &mCommandPool) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create command pool.");
+    }
+}
+
+void VkImg2DApp::createCommandBuffer()
+{
+    VkCommandBufferAllocateInfo allocateInfo{};
+    allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    allocateInfo.commandPool = mCommandPool;
+    allocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    allocateInfo.commandBufferCount = 1;
+
+    if (vkAllocateCommandBuffers(mDevice, &allocateInfo, &mCommandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate command buffer.");
+    }
+}
+
+void VkImg2DApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+{
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = 0;
+    beginInfo.pInheritanceInfo = nullptr;
+
+    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to begin recording command buffer.");
+    }
+
+    VkRenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassInfo.renderPass = mRenderPass;
+    renderPassInfo.framebuffer = mSwapchainFramebuffers[imageIndex];
+    renderPassInfo.renderArea.offset = { 0, 0 };
+    renderPassInfo.renderArea.extent = mSwapchainExtent;
+
+    VkClearValue clearValue = {{{ 0.0f, 0.0f, 0.0f, 1.0f }}};
+    renderPassInfo.clearValueCount = 1;
+    renderPassInfo.pClearValues = &clearValue;
+
+    vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, mPipeline);
+
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = (float)mSwapchainExtent.width;
+    viewport.height = (float)mSwapchainExtent.height;
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+    
+    VkRect2D scissor{};
+    scissor.offset = { 0, 0 };
+    scissor.extent = mSwapchainExtent;
+    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+
+    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+    vkCmdEndRenderPass(commandBuffer);
+
+    if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to record command buffer.");
+    }
+}
+
 void VkImg2DApp::setupDebugMessenger()
 {
     if (!enableValidationLayers) return;
@@ -760,6 +838,8 @@ void VkImg2DApp::mainLoop()
 
 void VkImg2DApp::cleanup()
 {
+    vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
+
     for (auto framebuffer : mSwapchainFramebuffers) {
         vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
     }
