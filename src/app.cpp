@@ -1,5 +1,9 @@
 #include "app.hpp"
 
+#include <limits>
+#include <algorithm>
+#include <ranges>
+#include <format>
 #include <iostream>
 #include <fstream>
 #include <set>
@@ -322,7 +326,7 @@ SwapchainSupportDetails VkImg2DApp::querySwapchainSupport(VkPhysicalDevice devic
     vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, nullptr);
 
     if (presentModeCount > 0) {
-        details.presentModes.resize(formatCount);
+        details.presentModes.resize(presentModeCount);
         vkGetPhysicalDeviceSurfacePresentModesKHR(device, mSurface, &presentModeCount, details.presentModes.data());
     }
 

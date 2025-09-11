@@ -1,6 +1,8 @@
 #pragma once
 
 #include <vulkan/vulkan.h>
+
+#include <optional>
 #include <vector>
 
 #define GLFW_INCLUDE_VULKAN
