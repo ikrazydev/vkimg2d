@@ -84,6 +84,9 @@ public:
     void createCommandPool();
     void createCommandBuffer();
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
+    void createSyncObjects();
+    void drawFrame();
     
     void mainLoop();
 
@@ -115,4 +118,8 @@ private:
 
     VkCommandPool mCommandPool;
     VkCommandBuffer mCommandBuffer;
+
+    VkSemaphore mImageAvailableSemaphore;
+    VkSemaphore mRenderFinishedSemaphore;
+    VkFence mInFlightFence;
 };

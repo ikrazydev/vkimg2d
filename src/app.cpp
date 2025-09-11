@@ -60,6 +60,8 @@ void VkImg2DApp::initVulkan()
 
     createCommandPool();
     createCommandBuffer();
+
+    createSyncObjects();
 }
 
 void VkImg2DApp::createInstance()
@@ -476,12 +478,22 @@ void VkImg2DApp::createRenderPass()
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &colorAttachmentRef;
 
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = 0;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = 1;
     renderPassInfo.pAttachments = &colorAttachment;
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
 
     if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create render pass.");
@@ -773,6 +785,69 @@ void VkImg2DApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t ima
     }
 }
 
+void VkImg2DApp::createSyncObjects()
+{
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    VkFenceCreateInfo fenceInfo{};
+    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+    fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+    if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphore) != VK_SUCCESS
+    || vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderFinishedSemaphore) != VK_SUCCESS
+    || vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFence) != VK_SUCCESS)
+    {
+        throw std::runtime_error("Failed to create synchronization objects.");
+    }
+}
+
+void VkImg2DApp::drawFrame()
+{
+    vkWaitForFences(mDevice, 1, &mInFlightFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(mDevice, 1, &mInFlightFence);
+
+    uint32_t imageIndex;
+    vkAcquireNextImageKHR(mDevice, mSwapchain, UINT64_MAX, mImageAvailableSemaphore, VK_NULL_HANDLE, &imageIndex);
+
+    vkResetCommandBuffer(mCommandBuffer, 0);
+    recordCommandBuffer(mCommandBuffer, imageIndex);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkSemaphore waitSemaphores[] = { mImageAvailableSemaphore };
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &mCommandBuffer;
+
+    VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphore };
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    if (vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mInFlightFence) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to submit draw command buffer.");
+    }
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+
+    VkSwapchainKHR swapchains[] = { mSwapchain };
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapchains;
+    presentInfo.pImageIndices = &imageIndex;
+
+    presentInfo.pResults = nullptr;
+
+    vkQueuePresentKHR(mPresentQueue, &presentInfo);
+}
+
 void VkImg2DApp::setupDebugMessenger()
 {
     if (!enableValidationLayers) return;
@@ -833,11 +908,18 @@ void VkImg2DApp::mainLoop()
 {
     while (!glfwWindowShouldClose(mWindow)) {
         glfwPollEvents();
+        drawFrame();
     }
+
+    vkDeviceWaitIdle(mDevice);
 }
 
 void VkImg2DApp::cleanup()
 {
+    vkDestroyFence(mDevice, mInFlightFence, nullptr);
+    vkDestroySemaphore(mDevice, mRenderFinishedSemaphore, nullptr);
+    vkDestroySemaphore(mDevice, mImageAvailableSemaphore, nullptr);
+
     vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 
     for (auto framebuffer : mSwapchainFramebuffers) {
