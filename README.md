@@ -7,6 +7,7 @@ A cross-platform Vulkan application for image manipulation. This application is 
 ### Required Libraries
 - **Vulkan SDK**: Download from [LunarG](https://vulkan.lunarg.com/sdk/home)
 - **GLFW**: For window management
+- **GLM**: For math
 - **CMake**: Version 3.16 or higher
 
 ### Platform-specific Notes
@@ -22,7 +23,7 @@ A cross-platform Vulkan application for image manipulation. This application is 
 
 #### Windows
 - Vulkan SDK includes necessary libraries
-- GLFW can be installed via vcpkg or built from source
+- GLFW and GLM can be installed via vcpkg or built from source
 
 ## Building
 
@@ -40,12 +41,14 @@ make
 #### macOS with Homebrew + Manual SDK
 ```bash
 # Install available dependencies via Homebrew
-brew install glfw cmake
+brew install glfw glm cmake
 
 # Download and install Vulkan SDK for macOS separately on the Vulkan website
 # It includes MoltenVK
 
 # Set environment variables (add to ~/.zshrc):
+export VULKAN_BIN_SDK=~/VulkanSDK/1.4.321.0/macOS
+export PATH=$VULKAN_BIN_SDK/bin:$PATH
 export VULKAN_SDK=/usr/local/share/vulkan
 export PATH=$VULKAN_SDK/bin:$PATH
 export VK_ICD_FILENAMES=$VULKAN_SDK/icd.d/MoltenVK_icd.json
@@ -59,7 +62,7 @@ make
 
 ### Manual Build
 ```bash
-# Ensure Vulkan SDK and GLFW are installed and in your PATH/CMAKE_PREFIX_PATH
+# Ensure Vulkan SDK, GLFW, and GLM are installed and in your PATH/CMAKE_PREFIX_PATH
 mkdir build && cd build
 cmake ..
 cmake --build .

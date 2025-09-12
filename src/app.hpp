@@ -77,9 +77,9 @@ struct Vertex {
 };
 
 const std::vector<Vertex> vertices = {
-    {{ 0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f}},
-    {{ 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f}},
-    {{ -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f}},
+    {{ 0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f }},
+    {{ 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f }},
+    {{ -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f }},
 };
 
 class VkImg2DApp {
@@ -128,9 +128,18 @@ public:
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     void createCommandPool();
+    void createBuffer(
+        VkDeviceSize size,
+        VkBufferUsageFlags usage,
+        VkMemoryPropertyFlags properties,
+        VkBuffer& buffer,
+        VkDeviceMemory& memory
+    );
     void createVertexBuffer();
+    void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     void createCommandBuffers();
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+
     void createSyncObjects();
     void createSwapchainImageSemaphores();
     void drawFrame();
