@@ -39,9 +39,16 @@ void VkImg2DApp::initWindow()
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
     mWindow = glfwCreateWindow(WIDTH, HEIGHT, "VkImg2D", nullptr, nullptr);
+    glfwSetWindowUserPointer(mWindow, this);
+    glfwSetFramebufferSizeCallback(mWindow, framebufferResizeCallback);
+}
+
+void VkImg2DApp::framebufferResizeCallback(GLFWwindow *window, int width, int height)
+{
+    auto app = reinterpret_cast<VkImg2DApp*>(glfwGetWindowUserPointer(window));
+    app->mFramebufferResized = true;
 }
 
 void VkImg2DApp::initVulkan()
@@ -820,7 +827,16 @@ void VkImg2DApp::drawFrame()
     vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(mDevice, mSwapchain, UINT64_MAX, mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE, &imageIndex);
+    auto result = vkAcquireNextImageKHR(mDevice, mSwapchain, UINT64_MAX, mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE, &imageIndex);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        recreateSwapchain();
+        return;
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("Failed to acquire swapchain image.");
+    }
+
+    vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]);
 
     vkResetCommandBuffer(mCommandBuffers[mCurrentFrame], 0);
     recordCommandBuffer(mCommandBuffers[mCurrentFrame], imageIndex);
@@ -857,9 +873,48 @@ void VkImg2DApp::drawFrame()
 
     presentInfo.pResults = nullptr;
 
-    vkQueuePresentKHR(mPresentQueue, &presentInfo);
+    result = vkQueuePresentKHR(mPresentQueue, &presentInfo);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mFramebufferResized) {
+        mFramebufferResized = false;
+        recreateSwapchain();
+    } else if (result != VK_SUCCESS) {
+        throw std::runtime_error("Failed to present swapchain image.");
+    }
 
     mCurrentFrame = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+}
+
+void VkImg2DApp::cleanupSwapchain()
+{
+    for (auto framebuffer : mSwapchainFramebuffers) {
+        vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
+    }
+
+    for (auto imageView : mSwapchainImageViews) {
+        vkDestroyImageView(mDevice, imageView, nullptr);
+    }
+
+    vkDestroySwapchainKHR(mDevice, mSwapchain, nullptr);
+}
+
+void VkImg2DApp::recreateSwapchain()
+{
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(mWindow, &width, &height);
+
+    while (width == 0 || height == 0) {
+        glfwGetFramebufferSize(mWindow, &width, &height);
+        glfwWaitEvents();
+    }
+
+    vkDeviceWaitIdle(mDevice);
+
+    cleanupSwapchain();
+
+    createSwapchain();
+    createSwapchainImageViews();
+    createFramebuffers();
 }
 
 void VkImg2DApp::setupDebugMessenger()
@@ -938,19 +993,12 @@ void VkImg2DApp::cleanup()
 
     vkDestroyCommandPool(mDevice, mCommandPool, nullptr);
 
-    for (auto framebuffer : mSwapchainFramebuffers) {
-        vkDestroyFramebuffer(mDevice, framebuffer, nullptr);
-    }
+    cleanupSwapchain();
 
     vkDestroyPipeline(mDevice, mPipeline, nullptr);
     vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
     vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
 
-    for (auto imageView : mSwapchainImageViews) {
-        vkDestroyImageView(mDevice, imageView, nullptr);
-    }
-
-    vkDestroySwapchainKHR(mDevice, mSwapchain, nullptr);
     vkDestroyDevice(mDevice, nullptr);
 
     if (enableValidationLayers) {

@@ -48,6 +48,7 @@ public:
     void run();
 
     void initWindow();
+    static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
     void initVulkan();
     void createInstance();
@@ -90,6 +91,9 @@ public:
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
     void createSyncObjects();
     void drawFrame();
+
+    void cleanupSwapchain();
+    void recreateSwapchain();
     
     void mainLoop();
 
@@ -126,4 +130,5 @@ private:
     std::vector<VkSemaphore> mRenderFinishedSemaphores;
     std::vector<VkFence> mInFlightFences;
     uint32_t mCurrentFrame = 0;
+    bool mFramebufferResized = false;
 };
