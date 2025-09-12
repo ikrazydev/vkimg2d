@@ -45,7 +45,7 @@ void VkImg2DApp::initWindow()
     glfwSetFramebufferSizeCallback(mWindow, framebufferResizeCallback);
 }
 
-void VkImg2DApp::framebufferResizeCallback(GLFWwindow *window, int width, int height)
+void VkImg2DApp::framebufferResizeCallback(GLFWwindow *window, int, int) 
 {
     auto app = reinterpret_cast<VkImg2DApp*>(glfwGetWindowUserPointer(window));
     app->mFramebufferResized = true;
@@ -801,21 +801,36 @@ void VkImg2DApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t ima
 void VkImg2DApp::createSyncObjects()
 {
     mImageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    mRenderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    mRenderedPerImageSemaphores.resize(mSwapchainImages.size());
     mInFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
+    
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
-
+    
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphores[i]) != VK_SUCCESS
-        || vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderFinishedSemaphores[i]) != VK_SUCCESS
         || vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFences[i]) != VK_SUCCESS)
         {
+            throw std::runtime_error("Failed to create synchronization objects.");
+        }
+    }
+
+    createSwapchainImageSemaphores();
+}
+
+void VkImg2DApp::createSwapchainImageSemaphores()
+{
+    mRenderedPerImageSemaphores.resize(mSwapchainImages.size());
+
+    VkSemaphoreCreateInfo semaphoreInfo{};
+    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+    for (size_t i = 0; i < mRenderedPerImageSemaphores.size(); i++) {
+        if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderedPerImageSemaphores[i]) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create synchronization objects.");
         }
     }
@@ -853,7 +868,7 @@ void VkImg2DApp::drawFrame()
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &mCommandBuffers[mCurrentFrame];
 
-    VkSemaphore signalSemaphores[] = { mRenderFinishedSemaphores[mCurrentFrame] };
+    VkSemaphore signalSemaphores[] = { mRenderedPerImageSemaphores[imageIndex] };
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -896,6 +911,10 @@ void VkImg2DApp::cleanupSwapchain()
     }
 
     vkDestroySwapchainKHR(mDevice, mSwapchain, nullptr);
+
+    for (size_t i = 0; i < mRenderedPerImageSemaphores.size(); i++) {
+        vkDestroySemaphore(mDevice, mRenderedPerImageSemaphores[i], nullptr);
+    }
 }
 
 void VkImg2DApp::recreateSwapchain()
@@ -915,6 +934,8 @@ void VkImg2DApp::recreateSwapchain()
     createSwapchain();
     createSwapchainImageViews();
     createFramebuffers();
+
+    createSwapchainImageSemaphores();
 }
 
 void VkImg2DApp::setupDebugMessenger()
@@ -987,7 +1008,6 @@ void VkImg2DApp::cleanup()
 {
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         vkDestroyFence(mDevice, mInFlightFences[i], nullptr);
-        vkDestroySemaphore(mDevice, mRenderFinishedSemaphores[i], nullptr);
         vkDestroySemaphore(mDevice, mImageAvailableSemaphores[i], nullptr);
     }
 

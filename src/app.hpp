@@ -90,6 +90,7 @@ public:
     void createCommandBuffers();
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
     void createSyncObjects();
+    void createSwapchainImageSemaphores();
     void drawFrame();
 
     void cleanupSwapchain();
@@ -127,7 +128,7 @@ private:
     std::vector<VkCommandBuffer> mCommandBuffers;
 
     std::vector<VkSemaphore> mImageAvailableSemaphores;
-    std::vector<VkSemaphore> mRenderFinishedSemaphores;
+    std::vector<VkSemaphore> mRenderedPerImageSemaphores;
     std::vector<VkFence> mInFlightFences;
     uint32_t mCurrentFrame = 0;
     bool mFramebufferResized = false;
