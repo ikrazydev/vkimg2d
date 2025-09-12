@@ -1,6 +1,6 @@
-# Vulkan Hello World
+# VkImg2D
 
-A cross-platform Vulkan application for image operations. This application is designed to work on Windows, macOS (via MoltenVK), and Linux.
+A cross-platform Vulkan application for image manipulation. This application is designed to work on Windows, macOS (via MoltenVK), and Linux.
 
 ## Dependencies
 
@@ -19,9 +19,6 @@ A cross-platform Vulkan application for image operations. This application is de
 #### Linux
 - Install Vulkan drivers for your GPU
 - X11 development libraries required
-- Package names vary by distribution:
-  - Ubuntu/Debian: `libvulkan-dev libglfw3-dev libx11-dev`
-  - Fedora: `vulkan-devel glfw-devel libX11-devel`
 
 #### Windows
 - Vulkan SDK includes necessary libraries

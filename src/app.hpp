@@ -26,6 +26,8 @@ const std::vector<const char*> deviceExtensions = {
     const bool enableValidationLayers = false;
 #endif
 
+const int MAX_FRAMES_IN_FLIGHT = 2;
+
 struct QueueFamilyIndices {
     std::optional<uint32_t> graphicsFamily;
     std::optional<uint32_t> presentFamily;
@@ -84,9 +86,8 @@ public:
     void createFramebuffers();
 
     void createCommandPool();
-    void createCommandBuffer();
+    void createCommandBuffers();
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
-
     void createSyncObjects();
     void drawFrame();
     
@@ -119,9 +120,10 @@ private:
     VkQueue mPresentQueue;
 
     VkCommandPool mCommandPool;
-    VkCommandBuffer mCommandBuffer;
+    std::vector<VkCommandBuffer> mCommandBuffers;
 
-    VkSemaphore mImageAvailableSemaphore;
-    VkSemaphore mRenderFinishedSemaphore;
-    VkFence mInFlightFence;
+    std::vector<VkSemaphore> mImageAvailableSemaphores;
+    std::vector<VkSemaphore> mRenderFinishedSemaphores;
+    std::vector<VkFence> mInFlightFences;
+    uint32_t mCurrentFrame = 0;
 };
