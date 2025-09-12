@@ -70,7 +70,10 @@ void VkImg2DApp::initVulkan()
     createFramebuffers();
 
     createCommandPool();
+
     createVertexBuffer();
+    createIndexBuffer();
+
     createCommandBuffers();
     createSyncObjects();
 }
@@ -819,6 +822,39 @@ void VkImg2DApp::createVertexBuffer()
     vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
 }
 
+void VkImg2DApp::createIndexBuffer()
+{
+    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    createBuffer(
+        bufferSize,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        stagingBuffer,
+        stagingBufferMemory
+    );
+
+    void* data;
+    vkMapMemory(mDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
+    memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
+    vkUnmapMemory(mDevice, stagingBufferMemory);
+
+    createBuffer(
+        bufferSize,
+        VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+        mIndexBuffer,
+        mIndexBufferMemory
+    );
+
+    copyBuffer(stagingBuffer, mIndexBuffer, bufferSize);
+
+    vkDestroyBuffer(mDevice, stagingBuffer, nullptr);
+    vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
+}
+
 void VkImg2DApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
 {
     VkCommandBufferAllocateInfo allocInfo{};
@@ -900,6 +936,8 @@ void VkImg2DApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t ima
     VkDeviceSize offsets[] = { 0 };
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
 
+    vkCmdBindIndexBuffer(commandBuffer, mIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
+
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -914,7 +952,7 @@ void VkImg2DApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t ima
     scissor.extent = mSwapchainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -1131,6 +1169,9 @@ void VkImg2DApp::mainLoop()
 
 void VkImg2DApp::cleanup()
 {
+    vkDestroyBuffer(mDevice, mIndexBuffer, nullptr);
+    vkFreeMemory(mDevice, mIndexBufferMemory, nullptr);
+
     vkDestroyBuffer(mDevice, mVertexBuffer, nullptr);
     vkFreeMemory(mDevice, mVertexBufferMemory, nullptr);
 

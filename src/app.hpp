@@ -77,9 +77,14 @@ struct Vertex {
 };
 
 const std::vector<Vertex> vertices = {
-    {{ 0.0f, -0.5f }, { 1.0f, 1.0f, 1.0f }},
-    {{ 0.5f, 0.5f }, { 0.0f, 1.0f, 0.0f }},
-    {{ -0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f }},
+    {{ -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }},
+    {{ 0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }},
+    {{ 0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f }},
+    {{ -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f }},
+};
+
+const std::vector<uint32_t> indices = {
+    0, 1, 2, 2, 3, 0,
 };
 
 class VkImg2DApp {
@@ -136,6 +141,7 @@ public:
         VkDeviceMemory& memory
     );
     void createVertexBuffer();
+    void createIndexBuffer();
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     void createCommandBuffers();
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
@@ -186,4 +192,6 @@ private:
 
     VkBuffer mVertexBuffer;
     VkDeviceMemory mVertexBufferMemory;
+    VkBuffer mIndexBuffer;
+    VkDeviceMemory mIndexBufferMemory;
 };
