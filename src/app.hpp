@@ -14,19 +14,19 @@
 const uint32_t WIDTH = 800;
 const uint32_t HEIGHT = 600;
 
-const std::vector<const char*> validationLayers = {
+const std::vector<const char*> sValidationLayers = {
     "VK_LAYER_KHRONOS_validation",
 };
 
-const std::vector<const char*> deviceExtensions = {
+const std::vector<const char*> sDeviceExtensions = {
     "VK_KHR_portability_subset",
     VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 };
 
 #if DEBUG
-    const bool enableValidationLayers = true;
+    const bool sEnableValidationLayers  = true;
 #else
-    const bool enableValidationLayers = false;
+    const bool sEnableValidationLayers = false;
 #endif
 
 const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -76,14 +76,14 @@ struct Vertex {
     }
 };
 
-const std::vector<Vertex> vertices = {
-    {{ -0.5f, -0.5f }, { 1.0f, 0.0f, 0.0f }},
-    {{ 0.5f, -0.5f }, { 0.0f, 1.0f, 0.0f }},
-    {{ 0.5f, 0.5f }, { 0.0f, 0.0f, 1.0f }},
-    {{ -0.5f, 0.5f }, { 1.0f, 1.0f, 1.0f }},
+const std::vector<Vertex> sVertices = {
+    {{ -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }},
+    {{ 1.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }},
+    {{ 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }},
+    {{ -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }},
 };
 
-const std::vector<uint32_t> indices = {
+const std::vector<uint32_t> sIndices = {
     0, 1, 2, 2, 3, 0,
 };
 
@@ -133,6 +133,7 @@ public:
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     void createCommandPool();
+    
     void createBuffer(
         VkDeviceSize size,
         VkBufferUsageFlags usage,
@@ -142,7 +143,14 @@ public:
     );
     void createVertexBuffer();
     void createIndexBuffer();
+    VkCommandBuffer beginSingleTimeCommands();
+    void endSingleTimeCommands(VkCommandBuffer commandBuffer);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
+
+    void createTextureImage();
+    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    
     void createCommandBuffers();
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
@@ -194,4 +202,7 @@ private:
     VkDeviceMemory mVertexBufferMemory;
     VkBuffer mIndexBuffer;
     VkDeviceMemory mIndexBufferMemory;
+
+    VkImage mTextureImage;
+    VkDeviceMemory mTextureImageMemory;
 };

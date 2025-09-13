@@ -8,6 +8,9 @@
 #include <fstream>
 #include <set>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 static VkResult _createDebugUtilsMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo, const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
     if (func != nullptr) {
@@ -71,6 +74,8 @@ void VkImg2DApp::initVulkan()
 
     createCommandPool();
 
+    createTextureImage();
+
     createVertexBuffer();
     createIndexBuffer();
 
@@ -80,7 +85,7 @@ void VkImg2DApp::initVulkan()
 
 void VkImg2DApp::createInstance()
 {
-    if (enableValidationLayers && !verifyValidationLayerSupport()) {
+    if (sEnableValidationLayers && !verifyValidationLayerSupport()) {
         throw std::runtime_error("Requested validation layers are not available.");
     }
 
@@ -106,11 +111,11 @@ void VkImg2DApp::createInstance()
     exts.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo;
-    if (enableValidationLayers) {
+    if (sEnableValidationLayers) {
         exts.emplace_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
 
-        createInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-        createInfo.ppEnabledLayerNames = validationLayers.data();
+        createInfo.enabledLayerCount = static_cast<uint32_t>(sValidationLayers.size());
+        createInfo.ppEnabledLayerNames = sValidationLayers.data();
 
         populateDebugMessengerCreateInfo(debugCreateInfo);
 
@@ -221,7 +226,7 @@ bool VkImg2DApp::verifyDeviceExtensionSupport(VkPhysicalDevice device)
     std::vector<VkExtensionProperties> exts(extCount);
     vkEnumerateDeviceExtensionProperties(device, nullptr, &extCount, exts.data());
 
-    std::set<std::string> requiredExts(deviceExtensions.begin(), deviceExtensions.end());
+    std::set<std::string> requiredExts(sDeviceExtensions.begin(), sDeviceExtensions.end());
 
     for (const auto& ext : exts) {
         requiredExts.erase(ext.extensionName);
@@ -295,14 +300,14 @@ void VkImg2DApp::createLogicalDevice()
     deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
     deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
 
-    deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(deviceExtensions.size());
-    deviceCreateInfo.ppEnabledExtensionNames = deviceExtensions.data();
+    deviceCreateInfo.enabledExtensionCount = static_cast<uint32_t>(sDeviceExtensions.size());
+    deviceCreateInfo.ppEnabledExtensionNames = sDeviceExtensions.data();
 
     deviceCreateInfo.enabledLayerCount = 0;
 
-    if (enableValidationLayers) {
-        deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(validationLayers.size());
-        deviceCreateInfo.ppEnabledLayerNames = validationLayers.data();
+    if (sEnableValidationLayers) {
+        deviceCreateInfo.enabledLayerCount = static_cast<uint32_t>(sValidationLayers.size());
+        deviceCreateInfo.ppEnabledLayerNames = sValidationLayers.data();
     }
 
     if (vkCreateDevice(mPhysicalDevice, &deviceCreateInfo, nullptr, &mDevice) != VK_SUCCESS) {
@@ -465,7 +470,7 @@ void VkImg2DApp::createSwapchainImageViews()
         createInfo.subresourceRange.layerCount = 1;
 
         if (vkCreateImageView(mDevice, &createInfo, nullptr, &mSwapchainImageViews[i]) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create image view");
+            throw std::runtime_error("Failed to create image view.");
         }
     }
 }
@@ -757,6 +762,169 @@ void VkImg2DApp::createCommandPool()
     }
 }
 
+void VkImg2DApp::createTextureImage()
+{
+    int texWidth, texHeight, texChannels;
+    stbi_uc* pixels = stbi_load("samples/sculpture_statue.jpg", &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    VkDeviceSize imageSize = texWidth * texHeight * 4;
+
+    if (!pixels) {
+        throw std::runtime_error("Failed to load texture image.");
+    }
+
+    VkBuffer stagingBuffer;
+    VkDeviceMemory stagingBufferMemory;
+    createBuffer(
+        imageSize,
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+        stagingBuffer,
+        stagingBufferMemory
+    );
+
+    void* data;
+    vkMapMemory(mDevice, stagingBufferMemory, 0, imageSize, 0, &data);
+    memcpy(data, pixels, static_cast<size_t>(imageSize));
+    vkUnmapMemory(mDevice, stagingBufferMemory);
+
+    VkImageCreateInfo imageInfo{};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = static_cast<uint32_t>(texWidth);
+    imageInfo.extent.height = static_cast<uint32_t>(texHeight);
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = VK_FORMAT_R8G8B8A8_SRGB;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.flags = 0;
+
+    if (vkCreateImage(mDevice, &imageInfo, nullptr, &mTextureImage) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create image.");
+    }
+
+    VkMemoryRequirements memoryRequirements;
+    vkGetImageMemoryRequirements(mDevice, mTextureImage, &memoryRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memoryRequirements.size;
+    allocInfo.memoryTypeIndex = findMemoryType(memoryRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    if (vkAllocateMemory(mDevice, &allocInfo, nullptr, &mTextureImageMemory) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate buffer memory.");
+    }
+
+    vkBindImageMemory(mDevice, mTextureImage, mTextureImageMemory, 0);
+
+    transitionImageLayout(
+        mTextureImage,
+        VK_FORMAT_R8G8B8_SRGB,
+        VK_IMAGE_LAYOUT_UNDEFINED,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+    );
+    copyBufferToImage(stagingBuffer, mTextureImage, static_cast<uint32_t>(texWidth), static_cast<uint32_t>(texHeight));
+    transitionImageLayout(
+        mTextureImage,
+        VK_FORMAT_R8G8B8_SRGB,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    );
+
+    vkDestroyBuffer(mDevice, stagingBuffer, nullptr);
+    vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
+
+    stbi_image_free(pixels);
+}
+
+void VkImg2DApp::copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height)
+{
+    auto commandBuffer = beginSingleTimeCommands();
+
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+
+    region.imageOffset = { 0, 0, 0 };
+    region.imageExtent = { width, height, 1 };
+
+    vkCmdCopyBufferToImage(
+        commandBuffer,
+        buffer,
+        image,
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        1,
+        &region
+    );
+
+    endSingleTimeCommands(commandBuffer);
+}
+
+void VkImg2DApp::transitionImageLayout(VkImage image, VkFormat, VkImageLayout oldLayout, VkImageLayout newLayout)
+{
+    auto commandBuffer = beginSingleTimeCommands();
+
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = oldLayout;
+    barrier.newLayout = newLayout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+    barrier.image = image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = 1;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    VkPipelineStageFlags srcStage;
+    VkPipelineStageFlags dstStage;
+
+    if (
+        oldLayout == VK_IMAGE_LAYOUT_UNDEFINED &&
+        newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL
+    ) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = 0;
+
+        srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        dstStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    } else if (
+        oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL &&
+        newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+    ) {
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+        srcStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else {
+        throw std::runtime_error("Unsupported layout transition.");
+    }
+
+    vkCmdPipelineBarrier(
+        commandBuffer,
+        srcStage, dstStage,
+        0,
+        0, nullptr,
+        0, nullptr,
+        1, &barrier
+    );
+
+    endSingleTimeCommands(commandBuffer);
+}
+
 void VkImg2DApp::createBuffer(
     VkDeviceSize size,
     VkBufferUsageFlags usage,
@@ -791,7 +959,7 @@ void VkImg2DApp::createBuffer(
 
 void VkImg2DApp::createVertexBuffer()
 {
-    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+    VkDeviceSize bufferSize = sizeof(sVertices[0]) * sVertices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -805,7 +973,7 @@ void VkImg2DApp::createVertexBuffer()
 
     void* data;
     vkMapMemory(mDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
+    memcpy(data, sVertices.data(), static_cast<size_t>(bufferSize));
     vkUnmapMemory(mDevice, stagingBufferMemory);
 
     createBuffer(
@@ -824,7 +992,7 @@ void VkImg2DApp::createVertexBuffer()
 
 void VkImg2DApp::createIndexBuffer()
 {
-    VkDeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+    VkDeviceSize bufferSize = sizeof(sIndices[0]) * sIndices.size();
 
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingBufferMemory;
@@ -838,7 +1006,7 @@ void VkImg2DApp::createIndexBuffer()
 
     void* data;
     vkMapMemory(mDevice, stagingBufferMemory, 0, bufferSize, 0, &data);
-    memcpy(data, indices.data(), static_cast<size_t>(bufferSize));
+    memcpy(data, sIndices.data(), static_cast<size_t>(bufferSize));
     vkUnmapMemory(mDevice, stagingBufferMemory);
 
     createBuffer(
@@ -855,7 +1023,7 @@ void VkImg2DApp::createIndexBuffer()
     vkFreeMemory(mDevice, stagingBufferMemory, nullptr);
 }
 
-void VkImg2DApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+VkCommandBuffer VkImg2DApp::beginSingleTimeCommands()
 {
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -872,12 +1040,11 @@ void VkImg2DApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize
 
     vkBeginCommandBuffer(commandBuffer, &beginInfo);
 
-    VkBufferCopy copyRegion{};
-    copyRegion.srcOffset = 0;
-    copyRegion.dstOffset = 0;
-    copyRegion.size = size;
-    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+    return commandBuffer;
+}
 
+void VkImg2DApp::endSingleTimeCommands(VkCommandBuffer commandBuffer)
+{
     vkEndCommandBuffer(commandBuffer);
 
     VkSubmitInfo submitInfo{};
@@ -889,6 +1056,19 @@ void VkImg2DApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize
     vkQueueWaitIdle(mGraphicsQueue);
 
     vkFreeCommandBuffers(mDevice, mCommandPool, 1, &commandBuffer);
+}
+
+void VkImg2DApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size)
+{
+    auto commandBuffer = beginSingleTimeCommands();
+
+    VkBufferCopy copyRegion{};
+    copyRegion.srcOffset = 0;
+    copyRegion.dstOffset = 0;
+    copyRegion.size = size;
+    vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
+
+    endSingleTimeCommands(commandBuffer);
 }
 
 void VkImg2DApp::createCommandBuffers()
@@ -952,7 +1132,7 @@ void VkImg2DApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t ima
     scissor.extent = mSwapchainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
+    vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(sIndices.size()), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -1103,7 +1283,7 @@ void VkImg2DApp::recreateSwapchain()
 
 void VkImg2DApp::setupDebugMessenger()
 {
-    if (!enableValidationLayers) return;
+    if (!sEnableValidationLayers) return;
 
     VkDebugUtilsMessengerCreateInfoEXT createInfo;
     populateDebugMessengerCreateInfo(createInfo);
@@ -1138,7 +1318,7 @@ bool VkImg2DApp::verifyValidationLayerSupport()
     std::vector<VkLayerProperties> vkLayers(layerCount);
     vkEnumerateInstanceLayerProperties(&layerCount, vkLayers.data());
 
-    return std::ranges::all_of(validationLayers, [&](const char* layer) {
+    return std::ranges::all_of(sValidationLayers, [&](const char* layer) {
         return std::ranges::any_of(vkLayers, [&](const auto& vkLayer) {
             std::cout << std::format("Layer: {}\n", vkLayer.layerName);
             return std::strcmp(layer, vkLayer.layerName) == 0;
@@ -1169,6 +1349,9 @@ void VkImg2DApp::mainLoop()
 
 void VkImg2DApp::cleanup()
 {
+    vkDestroyImage(mDevice, mTextureImage, nullptr);
+    vkFreeMemory(mDevice, mTextureImageMemory, nullptr);
+
     vkDestroyBuffer(mDevice, mIndexBuffer, nullptr);
     vkFreeMemory(mDevice, mIndexBufferMemory, nullptr);
 
@@ -1190,7 +1373,7 @@ void VkImg2DApp::cleanup()
 
     vkDestroyDevice(mDevice, nullptr);
 
-    if (enableValidationLayers) {
+    if (sEnableValidationLayers) {
         _destroyDebugUtilsMessengerEXT(mInstance, mDebugMessenger, nullptr);
     }
 
