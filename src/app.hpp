@@ -49,6 +49,7 @@ struct SwapchainSupportDetails {
 struct Vertex {
     glm::vec2 pos;
     glm::vec3 color;
+    glm::vec2 texCoord;
 
     static auto getBindingDescription() {
         VkVertexInputBindingDescription bindingDescription{};
@@ -60,7 +61,7 @@ struct Vertex {
     }
 
     static auto getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
 
         attributeDescriptions[0].binding = 0;
         attributeDescriptions[0].location = 0;
@@ -72,15 +73,20 @@ struct Vertex {
         attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
         attributeDescriptions[1].offset = offsetof(Vertex, color);
 
+        attributeDescriptions[2].binding = 0;
+        attributeDescriptions[2].location = 2;
+        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
+
         return attributeDescriptions;
     }
 };
 
 const std::vector<Vertex> sVertices = {
-    {{ -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }},
-    {{ 1.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }},
-    {{ 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }},
-    {{ -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }},
+    {{ -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }},
+    {{ 1.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f }},
+    {{ 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }},
+    {{ -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f }},
 };
 
 const std::vector<uint32_t> sIndices = {
@@ -127,13 +133,21 @@ public:
 
     static std::vector<char> readFile(const std::string& filename);
     VkShaderModule createShaderModule(const std::vector<char>& bytecode);
+    void createDescriptorLayout();
+    void createDescriptorPool();
+    void createDescriptorSets();
     void createGraphicsPipeline();
     void createFramebuffers();
 
     uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
     void createCommandPool();
-    
+    void createTextureImage();
+    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void createTextureImageView();
+    void createTextureSampler();
+
     void createBuffer(
         VkDeviceSize size,
         VkBufferUsageFlags usage,
@@ -146,12 +160,6 @@ public:
     VkCommandBuffer beginSingleTimeCommands();
     void endSingleTimeCommands(VkCommandBuffer commandBuffer);
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-
-    void createTextureImage();
-    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-    void createTextureImageView();
-    void createTextureSampler();
     
     void createCommandBuffers();
     void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
@@ -185,6 +193,9 @@ private:
     VkExtent2D mSwapchainExtent;
 
     VkRenderPass mRenderPass;
+    VkDescriptorSetLayout mDescriptorSetLayout;
+    VkDescriptorPool mDescriptorPool;
+    std::vector<VkDescriptorSet> mDescriptorSets;
     VkPipelineLayout mPipelineLayout;
     VkPipeline mPipeline;
 

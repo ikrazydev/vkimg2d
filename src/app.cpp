@@ -61,7 +61,7 @@ void VkImg2DApp::initVulkan()
     printExtensions();
 
     createSurface();
-    
+
     pickPhysicalDevice();
     createLogicalDevice();
 
@@ -69,14 +69,20 @@ void VkImg2DApp::initVulkan()
     createSwapchainImageViews();
 
     createRenderPass();
+
+    createDescriptorLayout();
+
     createGraphicsPipeline();
     createFramebuffers();
-
+    
     createCommandPool();
-
+    
     createTextureImage();
     createTextureImageView();
     createTextureSampler();
+
+    createDescriptorPool();
+    createDescriptorSets();
 
     createVertexBuffer();
     createIndexBuffer();
@@ -565,6 +571,77 @@ VkShaderModule VkImg2DApp::createShaderModule(const std::vector<char>& bytecode)
     return shaderModule;
 }
 
+void VkImg2DApp::createDescriptorLayout()
+{
+    VkDescriptorSetLayoutBinding samplerBinding{};
+    samplerBinding.binding = 0;
+    samplerBinding.descriptorCount = 1;
+    samplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    samplerBinding.pImmutableSamplers = nullptr;
+    samplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutCreateInfo layoutInfo{};
+    layoutInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutInfo.bindingCount = 1;
+    layoutInfo.pBindings = &samplerBinding;
+
+    if (vkCreateDescriptorSetLayout(mDevice, &layoutInfo, nullptr, &mDescriptorSetLayout) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create descriptor set layout.");
+    }
+}
+
+void VkImg2DApp::createDescriptorPool()
+{
+    VkDescriptorPoolSize poolSize{};
+    poolSize.type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+    poolSize.descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+    VkDescriptorPoolCreateInfo poolInfo{};
+    poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    poolInfo.poolSizeCount = 1;
+    poolInfo.pPoolSizes = &poolSize;
+    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+
+    if (vkCreateDescriptorPool(mDevice, &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create descriptor pool.");
+    }
+}
+
+void VkImg2DApp::createDescriptorSets()
+{
+    std::vector layouts(MAX_FRAMES_IN_FLIGHT, mDescriptorSetLayout);
+
+    VkDescriptorSetAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    allocInfo.descriptorPool = mDescriptorPool;
+    allocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    allocInfo.pSetLayouts = layouts.data();
+
+    mDescriptorSets.resize(allocInfo.descriptorSetCount);
+
+    if (vkAllocateDescriptorSets(mDevice, &allocInfo, mDescriptorSets.data()) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate descriptor sets.");
+    }
+
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        VkDescriptorImageInfo imageInfo{};
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageView = mTextureImageView;
+        imageInfo.sampler = mTextureSampler;
+
+        VkWriteDescriptorSet descriptorWrite{};
+        descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+        descriptorWrite.dstSet = mDescriptorSets[i];
+        descriptorWrite.dstBinding = 0;
+        descriptorWrite.dstArrayElement = 0;
+        descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+        descriptorWrite.descriptorCount = 1;
+        descriptorWrite.pImageInfo = &imageInfo;
+
+        vkUpdateDescriptorSets(mDevice, 1, &descriptorWrite, 0, nullptr);
+    }
+}
+
 void VkImg2DApp::createGraphicsPipeline()
 {
     auto vertexShaderCode = readFile("shaders/vertex.spv");
@@ -681,8 +758,8 @@ void VkImg2DApp::createGraphicsPipeline()
     
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 0;
-    pipelineLayoutInfo.pSetLayouts = nullptr;
+    pipelineLayoutInfo.setLayoutCount = 1;
+    pipelineLayoutInfo.pSetLayouts = &mDescriptorSetLayout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
     
@@ -1198,6 +1275,15 @@ void VkImg2DApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t ima
     scissor.extent = mSwapchainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
+    vkCmdBindDescriptorSets(
+        commandBuffer,
+        VK_PIPELINE_BIND_POINT_GRAPHICS,
+        mPipelineLayout,
+        0,
+        1, &mDescriptorSets[mCurrentFrame],
+        0, nullptr
+    );
+
     vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(sIndices.size()), 1, 0, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
@@ -1436,6 +1522,8 @@ void VkImg2DApp::cleanup()
     cleanupSwapchain();
 
     vkDestroyPipeline(mDevice, mPipeline, nullptr);
+    vkDestroyDescriptorPool(mDevice, mDescriptorPool, nullptr);
+    vkDestroyDescriptorSetLayout(mDevice, mDescriptorSetLayout, nullptr);
     vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
     vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
 
