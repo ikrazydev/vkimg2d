@@ -6,6 +6,11 @@
 #include <optional>
 #include <vector>
 
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_vulkan.h>
+
+#define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
@@ -148,6 +153,8 @@ public:
     void createTextureImageView();
     void createTextureSampler();
 
+    void setupImGui();
+    
     void createBuffer(
         VkDeviceSize size,
         VkBufferUsageFlags usage,
@@ -181,6 +188,7 @@ private:
     VkDebugUtilsMessengerEXT mDebugMessenger;
 
     VkSurfaceKHR mSurface;
+    VkSurfaceFormatKHR mSurfaceFormat;
 
     VkPhysicalDevice mPhysicalDevice;
     VkDevice mDevice;

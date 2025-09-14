@@ -87,6 +87,8 @@ void VkImg2DApp::initVulkan()
     createVertexBuffer();
     createIndexBuffer();
 
+    setupImGui();
+
     createCommandBuffers();
     createSyncObjects();
 }
@@ -379,13 +381,18 @@ VkSurfaceFormatKHR VkImg2DApp::chooseSurfaceFormat(const std::vector<VkSurfaceFo
 
 VkPresentModeKHR VkImg2DApp::choosePresentMode(const std::vector<VkPresentModeKHR> &presentModes)
 {
+    bool foundImmediate = false;
+
     for (const auto& presentMode : presentModes) {
         if (presentMode == VK_PRESENT_MODE_MAILBOX_KHR) {
             return presentMode;
         }
+        if (presentMode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+            foundImmediate = true;
+        }
     }
 
-    return VK_PRESENT_MODE_FIFO_KHR;
+    return foundImmediate ? VK_PRESENT_MODE_IMMEDIATE_KHR : VK_PRESENT_MODE_FIFO_KHR;
 }
 
 VkExtent2D VkImg2DApp::chooseExtent2D(const VkSurfaceCapabilitiesKHR &capabilities)
@@ -490,6 +497,41 @@ void VkImg2DApp::createSwapchainImageViews()
             throw std::runtime_error("Failed to create image view.");
         }
     }
+}
+
+void VkImg2DApp::setupImGui()
+{
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    auto& io = ImGui::GetIO();
+    io.Fonts->AddFontDefault();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForVulkan(mWindow, true);
+
+    auto families = findDeviceFamilies(mPhysicalDevice);
+
+    ImGui_ImplVulkan_InitInfo initInfo{};
+    initInfo.ApiVersion = VK_API_VERSION_1_4;
+    initInfo.Instance = mInstance;
+    initInfo.PhysicalDevice = mPhysicalDevice;
+    initInfo.Device = mDevice;
+    initInfo.QueueFamily = families.graphicsFamily.value();
+    initInfo.Queue = mGraphicsQueue;
+    initInfo.PipelineCache = nullptr;
+    initInfo.DescriptorPool = mDescriptorPool;
+    initInfo.RenderPass = mRenderPass;
+    initInfo.Subpass = 0;
+    initInfo.MinImageCount = MAX_FRAMES_IN_FLIGHT; // TODO
+    initInfo.ImageCount = mSwapchainImages.size();
+    initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    initInfo.Allocator = nullptr;
+    initInfo.CheckVkResultFn = nullptr;
+
+    ImGui_ImplVulkan_Init(&initInfo);
 }
 
 void VkImg2DApp::createRenderPass()
@@ -600,7 +642,8 @@ void VkImg2DApp::createDescriptorPool()
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     poolInfo.poolSizeCount = 1;
     poolInfo.pPoolSizes = &poolSize;
-    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
+    poolInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) + IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE;
+    poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
     if (vkCreateDescriptorPool(mDevice, &poolInfo, nullptr, &mDescriptorPool) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create descriptor pool.");
@@ -668,7 +711,7 @@ void VkImg2DApp::createGraphicsPipeline()
         VK_DYNAMIC_STATE_VIEWPORT,
         VK_DYNAMIC_STATE_SCISSOR,
     };
-    
+
     VkPipelineDynamicStateCreateInfo dynamicState{};
     dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
     dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
@@ -676,19 +719,19 @@ void VkImg2DApp::createGraphicsPipeline()
 
     auto bindingDescription = Vertex::getBindingDescription();
     auto attributeDescriptions = Vertex::getAttributeDescriptions();
-    
+
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertexInputInfo.vertexBindingDescriptionCount = 1;
     vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
     vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
     vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
-    
+
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
     inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
     inputAssembly.primitiveRestartEnable = false;
-    
+
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
@@ -696,18 +739,18 @@ void VkImg2DApp::createGraphicsPipeline()
     viewport.height = (float)mSwapchainExtent.height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    
+
     VkRect2D scissor{};
     scissor.offset = { 0, 0 };
     scissor.extent = mSwapchainExtent;
-    
+
     VkPipelineViewportStateCreateInfo viewportState{};
     viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
     viewportState.viewportCount = 1;
     viewportState.pViewports = &viewport;
     viewportState.scissorCount = 1;
     viewportState.pScissors = &scissor;
-    
+
     VkPipelineRasterizationStateCreateInfo rasterizer{};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
     rasterizer.depthClampEnable = VK_FALSE;
@@ -716,12 +759,12 @@ void VkImg2DApp::createGraphicsPipeline()
     rasterizer.lineWidth = 1.0f;
     rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
     rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
-    
+
     rasterizer.depthBiasEnable = VK_FALSE;
     rasterizer.depthBiasConstantFactor = 0.0f;
     rasterizer.depthBiasSlopeFactor = 0.0f;
     rasterizer.depthBiasClamp = 0.0f;
-    
+
     VkPipelineMultisampleStateCreateInfo multisampling{};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
     multisampling.sampleShadingEnable = VK_FALSE;
@@ -730,7 +773,7 @@ void VkImg2DApp::createGraphicsPipeline()
     multisampling.pSampleMask = nullptr;
     multisampling.alphaToCoverageEnable = VK_FALSE;
     multisampling.alphaToOneEnable = VK_FALSE;
-    
+
     VkPipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask =
     VK_COLOR_COMPONENT_R_BIT
@@ -744,7 +787,7 @@ void VkImg2DApp::createGraphicsPipeline()
     colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
     colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
     colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-    
+
     VkPipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     colorBlending.logicOpEnable = VK_FALSE;
@@ -755,14 +798,14 @@ void VkImg2DApp::createGraphicsPipeline()
     colorBlending.blendConstants[1] = 0.0f;
     colorBlending.blendConstants[2] = 0.0f;
     colorBlending.blendConstants[3] = 0.0f;
-    
+
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
     pipelineLayoutInfo.pSetLayouts = &mDescriptorSetLayout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
-    
+
     if (vkCreatePipelineLayout(mDevice, &pipelineLayoutInfo, nullptr, &mPipelineLayout) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create pipeline layout.");
     }
@@ -1286,6 +1329,10 @@ void VkImg2DApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t ima
 
     vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(sIndices.size()), 1, 0, 0, 0);
 
+    ImGui::Render();
+    auto* imGuiData = ImGui::GetDrawData();
+    ImGui_ImplVulkan_RenderDrawData(imGuiData, commandBuffer);
+
     vkCmdEndRenderPass(commandBuffer);
 
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -1493,6 +1540,19 @@ void VkImg2DApp::mainLoop()
 {
     while (!glfwWindowShouldClose(mWindow)) {
         glfwPollEvents();
+
+        ImGui_ImplVulkan_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        auto& io = ImGui::GetIO();
+
+        ImGui::Begin("Debug Info");
+        ImGui::Text("Framerate: %.0f FPS", io.Framerate);
+        ImGui::End();
+
+        ImGui::ShowDemoWindow();
+
         drawFrame();
     }
 
@@ -1501,6 +1561,10 @@ void VkImg2DApp::mainLoop()
 
 void VkImg2DApp::cleanup()
 {
+    ImGui_ImplVulkan_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+
     vkDestroySampler(mDevice, mTextureSampler, nullptr);
     vkDestroyImageView(mDevice, mTextureImageView, nullptr);
     vkDestroyImage(mDevice, mTextureImage, nullptr);
