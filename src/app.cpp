@@ -68,7 +68,8 @@ void VkImg2DApp::initVulkan()
     createSwapchain();
     createSwapchainImageViews();
 
-    createRenderPass();
+    createMainRenderPass();
+    createImGuiRenderPass();
 
     createDescriptorLayout();
 
@@ -507,6 +508,8 @@ void VkImg2DApp::setupImGui()
     auto& io = ImGui::GetIO();
     io.Fonts->AddFontDefault();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui::StyleColorsDark();
 
@@ -534,13 +537,16 @@ void VkImg2DApp::setupImGui()
     ImGui_ImplVulkan_Init(&initInfo);
 }
 
-void VkImg2DApp::createRenderPass()
+void VkImg2DApp::createRenderPass(VkDevice device, VkFormat format, VkRenderPass* pRenderPass)
 {
     VkAttachmentDescription colorAttachment{};
-    colorAttachment.format = mSwapchainFormat;
+    colorAttachment.format = format;
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
 
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    if (format == mSwapchainFormat)
+        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    else
+        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
     colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -574,9 +580,19 @@ void VkImg2DApp::createRenderPass()
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(mDevice, &renderPassInfo, nullptr, &mRenderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(device, &renderPassInfo, nullptr, pRenderPass) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create render pass.");
     }
+}
+
+void VkImg2DApp::createMainRenderPass()
+{
+    createRenderPass(mDevice, mSwapchainFormat, &mRenderPass);
+}
+
+void VkImg2DApp::createImGuiRenderPass()
+{
+    createRenderPass(mDevice, VK_FORMAT_B8G8R8A8_UNORM, &mImGuiRenderPass);
 }
 
 std::vector<char> VkImg2DApp::readFile(const std::string& filename)
@@ -1260,6 +1276,7 @@ void VkImg2DApp::copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize
 void VkImg2DApp::createCommandBuffers()
 {
     mCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+    mImGuiCommandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
     VkCommandBufferAllocateInfo allocateInfo{};
     allocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1270,9 +1287,19 @@ void VkImg2DApp::createCommandBuffers()
     if (vkAllocateCommandBuffers(mDevice, &allocateInfo, mCommandBuffers.data()) != VK_SUCCESS) {
         throw std::runtime_error("Failed to allocate command buffers.");
     }
+
+    VkCommandBufferAllocateInfo imGuiAllocateInfo{};
+    imGuiAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+    imGuiAllocateInfo.commandPool = mCommandPool;
+    imGuiAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    imGuiAllocateInfo.commandBufferCount = static_cast<uint32_t>(mImGuiCommandBuffers.size());
+
+    if (vkAllocateCommandBuffers(mDevice, &imGuiAllocateInfo, mImGuiCommandBuffers.data()) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate command buffers.");
+    }
 }
 
-void VkImg2DApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex)
+void VkImg2DApp::recordCommandBuffers(VkCommandBuffer commandBuffer, VkCommandBuffer imGuiCommandBuffer, uint32_t imageIndex)
 {
     VkCommandBufferBeginInfo beginInfo{};
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1329,15 +1356,39 @@ void VkImg2DApp::recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t ima
 
     vkCmdDrawIndexed(commandBuffer, static_cast<uint32_t>(sIndices.size()), 1, 0, 0, 0);
 
-    ImGui::Render();
-    auto* imGuiData = ImGui::GetDrawData();
-    ImGui_ImplVulkan_RenderDrawData(imGuiData, commandBuffer);
-
     vkCmdEndRenderPass(commandBuffer);
 
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
         throw std::runtime_error("Failed to record command buffer.");
     }
+
+    // if (vkBeginCommandBuffer(imGuiCommandBuffer, &beginInfo) != VK_SUCCESS) {
+    //     throw std::runtime_error("Failed to begin recording command buffer.");
+    // }
+
+    // VkRenderPassBeginInfo imGuiRenderPassInfo{};
+    // imGuiRenderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    // imGuiRenderPassInfo.renderPass = mImGuiRenderPass;
+    // imGuiRenderPassInfo.framebuffer = mSwapchainFramebuffers[imageIndex];
+    // imGuiRenderPassInfo.renderArea.offset = { 0, 0 };
+    // imGuiRenderPassInfo.renderArea.extent = mSwapchainExtent;
+
+    // vkCmdBeginRenderPass(imGuiCommandBuffer, &imGuiRenderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    ImGui::Render();
+    // auto* imGuiData = ImGui::GetDrawData();
+    // ImGui_ImplVulkan_RenderDrawData(imGuiData, imGuiCommandBuffer);
+
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
+
+    // vkCmdEndRenderPass(imGuiCommandBuffer);
+
+    // if (vkEndCommandBuffer(imGuiCommandBuffer) != VK_SUCCESS) {
+    //     throw std::runtime_error("Failed to record command buffer.");
+    // }
 }
 
 void VkImg2DApp::createSyncObjects()
@@ -1396,7 +1447,8 @@ void VkImg2DApp::drawFrame()
     vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]);
 
     vkResetCommandBuffer(mCommandBuffers[mCurrentFrame], 0);
-    recordCommandBuffer(mCommandBuffers[mCurrentFrame], imageIndex);
+    vkResetCommandBuffer(mImGuiCommandBuffers[mCurrentFrame], 0);
+    recordCommandBuffers(mCommandBuffers[mCurrentFrame], mImGuiCommandBuffers[mCurrentFrame], imageIndex);
 
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1589,6 +1641,7 @@ void VkImg2DApp::cleanup()
     vkDestroyDescriptorPool(mDevice, mDescriptorPool, nullptr);
     vkDestroyDescriptorSetLayout(mDevice, mDescriptorSetLayout, nullptr);
     vkDestroyPipelineLayout(mDevice, mPipelineLayout, nullptr);
+    vkDestroyRenderPass(mDevice, mImGuiRenderPass, nullptr);
     vkDestroyRenderPass(mDevice, mRenderPass, nullptr);
 
     vkDestroyDevice(mDevice, nullptr);

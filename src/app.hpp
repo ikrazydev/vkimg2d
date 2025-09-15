@@ -134,7 +134,9 @@ public:
     void createSwapchain();
     void createSwapchainImageViews();
 
-    void createRenderPass();
+    void createRenderPass(VkDevice device, VkFormat format, VkRenderPass* pRenderPass);
+    void createMainRenderPass();
+    void createImGuiRenderPass();
 
     static std::vector<char> readFile(const std::string& filename);
     VkShaderModule createShaderModule(const std::vector<char>& bytecode);
@@ -169,7 +171,7 @@ public:
     void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     
     void createCommandBuffers();
-    void recordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+    void recordCommandBuffers(VkCommandBuffer commandBuffer, VkCommandBuffer imGuiCommandBuffer, uint32_t imageIndex);
 
     void createSyncObjects();
     void createSwapchainImageSemaphores();
@@ -228,4 +230,7 @@ private:
     VkDeviceMemory mTextureImageMemory;
     VkImageView mTextureImageView;
     VkSampler mTextureSampler;
+
+    VkRenderPass mImGuiRenderPass;
+    std::vector<VkCommandBuffer> mImGuiCommandBuffers;
 };
