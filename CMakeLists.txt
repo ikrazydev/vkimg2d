@@ -31,7 +31,10 @@ set(IMGUI_DIR external/imgui)
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
-    src/app.cpp
+    src/app_new.cpp
+    src/window.cpp
+
+    # src/vulkan/renderer.cpp
 
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_demo.cpp

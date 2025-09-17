@@ -2,10 +2,10 @@
 #include <stdexcept>
 #include <cstdlib>
 
-#include "app.hpp"
+#include <app_new.hpp>
 
 int main() {
-    VkImg2DApp app;
+    App app;
 
     try {
         app.run();
