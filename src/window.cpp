@@ -1,6 +1,13 @@
 #include <window.hpp>
 
-void Window::init() {
+Window::~Window()
+{
+    glfwDestroyWindow(mWindow);
+    glfwTerminate();
+}
+
+void Window::init()
+{
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -8,6 +15,11 @@ void Window::init() {
     mWindow = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "VkImg2D", nullptr, nullptr);
     glfwSetWindowUserPointer(mWindow, this);
     glfwSetFramebufferSizeCallback(mWindow, _framebufferResizeCallback);
+}
+
+void Window::vkGetRequiredExtensions(const char**& exts, uint32_t& extCount)
+{
+    exts = glfwGetRequiredInstanceExtensions(&extCount);
 }
 
 bool Window::shouldClose()

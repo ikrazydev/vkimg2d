@@ -10,7 +10,10 @@ static const uint32_t WIN_HEIGHT = 600;
 class Window
 {
 public:
+    ~Window();
+
     void init();
+    void vkGetRequiredExtensions(const char**& exts, uint32_t& extCount);
 
     bool shouldClose();
     void update();

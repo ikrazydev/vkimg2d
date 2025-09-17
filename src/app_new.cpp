@@ -14,8 +14,28 @@ void App::_initWindow()
     mWindow.init();
 }
 
+std::vector<const char *> App::_getExtensionNames()
+{
+    const char** winExts;
+    uint32_t winExtCount;
+    mWindow.vkGetRequiredExtensions(winExts, winExtCount);
+
+    std::vector exts(winExts, winExts + winExtCount);
+    exts.emplace_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+
+    return exts;
+}
+
 void App::_initVulkan()
 {
+    auto exts = _getExtensionNames();
+
+    VkRendererConfig config{};
+    config.requiredExtensions = exts.data();
+    config.requiredExtensionCount = static_cast<uint32_t>(exts.size());
+
+    mVkRenderer = VkRenderer();
+    mVkRenderer.init(config);
 }
 
 void App::_loop()

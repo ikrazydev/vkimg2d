@@ -34,7 +34,7 @@ add_executable(${PROJECT_NAME}
     src/app_new.cpp
     src/window.cpp
 
-    # src/vulkan/renderer.cpp
+    src/vulkan/renderer.cpp
 
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_demo.cpp
