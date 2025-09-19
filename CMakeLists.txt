@@ -4,8 +4,6 @@ project(VkImg2D VERSION 1.0.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(PkgConfig REQUIRED)
-
 if(APPLE)
     if(EXISTS "/usr/local/lib/libMoltenVK.dylib")
         set(MOLTENVK_LIBRARY "/usr/local/lib/libMoltenVK.dylib")
