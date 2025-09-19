@@ -1,8 +1,18 @@
 #include <vulkan/renderer.hpp>
+#include "renderer.hpp"
+
+#include <iostream>
 
 void VkRenderer::init(VkRendererConfig config)
 {
+    VULKAN_HPP_DEFAULT_DISPATCHER.init();
+
     _createInstance(config);
+    _printExtensions();
+
+    if (config.enableValidationLayers) {
+        _setupDebugMessenger();
+    }
 }
 
 void VkRenderer::_createInstance(const VkRendererConfig& config)
@@ -12,7 +22,7 @@ void VkRenderer::_createInstance(const VkRendererConfig& config)
     appInfo.setApplicationVersion(VK_MAKE_VERSION(0, 1, 0));
     appInfo.setPEngineName("Custom");
     appInfo.setEngineVersion(VK_MAKE_VERSION(1, 0, 0));
-    appInfo.setApiVersion(VK_API_VERSION_1_3);
+    appInfo.setApiVersion(VK_API_VERSION_1_4);
 
     vk::InstanceCreateInfo createInfo{};
     createInfo.setPApplicationInfo(&appInfo);
@@ -20,5 +30,63 @@ void VkRenderer::_createInstance(const VkRendererConfig& config)
     createInfo.setEnabledExtensionCount(config.requiredExtensionCount);
     createInfo.setPpEnabledExtensionNames(config.requiredExtensions);
 
+    vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
+    if (config.enableValidationLayers) {
+        createInfo.setEnabledLayerCount(static_cast<uint32_t>(config.validationLayers.size()));
+        createInfo.setPpEnabledLayerNames(config.validationLayers.data());
+
+        _populateDebugMessengerCreateInfo(debugCreateInfo);
+        createInfo.setPNext(&debugCreateInfo);
+    } else {
+        createInfo.setEnabledLayerCount(0);
+    }
+
     mInstance = vk::createInstanceUnique(createInfo, nullptr);
+}
+
+VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
+    VkDebugUtilsMessageSeverityFlagBitsEXT,
+    VkDebugUtilsMessageTypeFlagsEXT,
+    const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+    void*)
+{
+    std::cerr << "Validation layer: " << pCallbackData->pMessage << "\n";
+
+    return VK_FALSE;
+}
+
+void VkRenderer::_printExtensions()
+{
+    auto exts = vk::enumerateInstanceExtensionProperties();
+
+    std::cout << "Available extensions:\n";
+
+    for (const auto& ext : exts) {
+        std::cout << "\t" << ext.extensionName << "\n";
+    }
+}
+
+void VkRenderer::_setupDebugMessenger()
+{
+    vk::DebugUtilsMessengerCreateInfoEXT createInfo;
+    _populateDebugMessengerCreateInfo(createInfo);
+
+    mDebugMessenger = mInstance->createDebugUtilsMessengerEXTUnique(createInfo);
+}
+
+void VkRenderer::_populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo)
+{
+    createInfo.setMessageSeverity(
+        // No info bit
+        vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose
+        | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning
+        | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError
+    );
+    createInfo.setMessageType(
+        vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral
+        | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation
+        | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance
+    );
+    createInfo.setPfnUserCallback(debugCallback);
+    createInfo.setPUserData(nullptr);
 }
