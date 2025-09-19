@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE;
+
 void VkRenderer::init(VkRendererConfig config)
 {
     VULKAN_HPP_DEFAULT_DISPATCHER.init();
@@ -42,6 +44,8 @@ void VkRenderer::_createInstance(const VkRendererConfig& config)
     }
 
     mInstance = vk::createInstanceUnique(createInfo, nullptr);
+
+    VULKAN_HPP_DEFAULT_DISPATCHER.init(mInstance.get());
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(

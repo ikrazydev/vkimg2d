@@ -3,12 +3,10 @@
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
 
-VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE;
-
 struct VkRendererConfig
 {
-    uint32_t requiredExtensionCount;
     const char** requiredExtensions;
+    uint32_t requiredExtensionCount;
 
     bool enableValidationLayers;
     const std::vector<const char*>& validationLayers;
