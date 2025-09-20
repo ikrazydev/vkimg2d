@@ -10,15 +10,26 @@
 
 void Device::init(const VkRendererConfig& config, const vk::UniqueInstance& instance)
 {
+    mInstance = instance.get();
+
     _createSurface(instance, config.window);
 
-    mPhysicalDevice = _pickPhysicalDevice(instance, config.requiredExtensions);
+    mPhysicalDevice = _pickPhysicalDevice(instance, config.deviceExtensions);
     mQueueFamilies = _findQueueFamilies(mPhysicalDevice);
 
     auto deviceCreationResult = _createLogicalDevice(config);
     mDevice = std::move(deviceCreationResult.device);
     mGraphicsQueue = deviceCreationResult.graphicsQueue;
     mPresentQueue = deviceCreationResult.presentQueue;
+}
+
+Device::~Device()
+{
+    if (mInstance == VK_NULL_HANDLE) {
+        return;
+    }
+
+    mInstance.destroySurfaceKHR(mSurface);
 }
 
 void Device::_createSurface(const vk::UniqueInstance& instance, const Window& window)
@@ -28,7 +39,7 @@ void Device::_createSurface(const vk::UniqueInstance& instance, const Window& wi
         throw std::runtime_error("Failed to create window surface.");
     }
 
-    mSurface = vk::UniqueSurfaceKHR(rawSurface);
+    mSurface = vk::SurfaceKHR(rawSurface);
 }
 
 vk::PhysicalDevice Device::_pickPhysicalDevice(const vk::UniqueInstance& instance, const std::vector<const char*>& extensions)
@@ -70,7 +81,7 @@ uint32_t Device::_calculateDeviceScore(const vk::PhysicalDevice& device, const s
     auto props = device.getProperties();
 
     score += props.limits.maxColorAttachments;
-    score += props.limits.maxSamplerAnisotropy;
+    score += static_cast<uint32_t>(props.limits.maxSamplerAnisotropy);
 
     switch (props.deviceType)
     {
@@ -131,7 +142,7 @@ DeviceQueueFamilies Device::_findQueueFamilies(const vk::PhysicalDevice& device)
             indices.graphicsFamily = i;
         }
 
-        auto presentSupport = device.getSurfaceSupportKHR(i, mSurface.get());
+        auto presentSupport = device.getSurfaceSupportKHR(i, mSurface);
         if (presentSupport) {
             indices.presentFamily = i;
         }
@@ -166,7 +177,7 @@ _DeviceCreationResult Device::_createLogicalDevice(const VkRendererConfig& confi
     deviceCreateInfo.setQueueCreateInfos(queueCreateInfos);
     deviceCreateInfo.setPEnabledFeatures(&deviceFeatures);
 
-    deviceCreateInfo.setPEnabledExtensionNames(config.requiredExtensions);
+    deviceCreateInfo.setPEnabledExtensionNames(config.deviceExtensions);
 
     deviceCreateInfo.setEnabledLayerCount(0);
     if (config.enableValidationLayers) {

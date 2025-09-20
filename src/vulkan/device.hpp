@@ -31,6 +31,8 @@ class Device
 {
 public:
     void init(const VkRendererConfig& config, const vk::UniqueInstance& instance);
+
+    ~Device();
 private:
     void _createSurface(const vk::UniqueInstance& instance, const Window& window);
 
@@ -42,7 +44,9 @@ private:
 
     _DeviceCreationResult _createLogicalDevice(const VkRendererConfig& config);
 
-    vk::UniqueSurfaceKHR mSurface;
+    vk::Instance mInstance;
+
+    vk::SurfaceKHR mSurface;
 
     vk::PhysicalDevice mPhysicalDevice;
     DeviceQueueFamilies mQueueFamilies;

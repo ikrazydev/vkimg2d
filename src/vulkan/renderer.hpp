@@ -12,6 +12,7 @@ struct VkRendererConfig
 
     bool enableValidationLayers;
     const std::vector<const char*>& validationLayers;
+    const std::vector<const char*>& deviceExtensions;
 
     const Window& window;
 };

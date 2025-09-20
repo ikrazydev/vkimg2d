@@ -25,7 +25,7 @@ void VkRenderer::_createInstance(const VkRendererConfig& config)
     appInfo.setApplicationVersion(VK_MAKE_VERSION(0, 1, 0));
     appInfo.setPEngineName("Custom");
     appInfo.setEngineVersion(VK_MAKE_VERSION(1, 0, 0));
-    appInfo.setApiVersion(VK_API_VERSION_1_4);
+    appInfo.setApiVersion(VK_API_VERSION_1_3);
 
     vk::InstanceCreateInfo createInfo{};
     createInfo.setPApplicationInfo(&appInfo);
@@ -34,8 +34,7 @@ void VkRenderer::_createInstance(const VkRendererConfig& config)
 
     vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     if (config.enableValidationLayers) {
-        createInfo.setEnabledLayerCount(static_cast<uint32_t>(config.validationLayers.size()));
-        createInfo.setPpEnabledLayerNames(config.validationLayers.data());
+        createInfo.setPEnabledLayerNames(config.validationLayers);
 
         _populateDebugMessengerCreateInfo(debugCreateInfo);
         createInfo.setPNext(&debugCreateInfo);
@@ -48,15 +47,15 @@ void VkRenderer::_createInstance(const VkRendererConfig& config)
     VULKAN_HPP_DEFAULT_DISPATCHER.init(mInstance.get());
 }
 
-VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-    VkDebugUtilsMessageSeverityFlagBitsEXT,
-    VkDebugUtilsMessageTypeFlagsEXT,
-    const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
+VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(
+    vk::DebugUtilsMessageSeverityFlagBitsEXT,
+    vk::DebugUtilsMessageTypeFlagsEXT,
+    const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void*)
 {
     std::cerr << "Validation layer: " << pCallbackData->pMessage << "\n";
 
-    return VK_FALSE;
+    return vk::False;
 }
 
 void VkRenderer::_printExtensions()

@@ -57,11 +57,11 @@ void App::_initVulkan()
 
         .enableValidationLayers = gEnableValidationLayers,
         .validationLayers = gValidationLayers,
+        .deviceExtensions = gDeviceExtensions,
 
         .window = mWindow,
     };
 
-    mVkRenderer = VkRenderer();
     mVkRenderer.init(config);
 }
 
