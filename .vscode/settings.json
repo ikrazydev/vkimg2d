@@ -3,6 +3,7 @@
         "*.pl": "prolog",
         "stdexcept": "cpp",
         "vector": "cpp",
-        "iostream": "cpp"
+        "iostream": "cpp",
+        "optional": "cpp"
     }
 }

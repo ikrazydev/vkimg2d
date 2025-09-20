@@ -1,5 +1,7 @@
 #include <window.hpp>
 
+#include <stdexcept>
+
 Window::~Window()
 {
     glfwDestroyWindow(mWindow);
@@ -17,9 +19,14 @@ void Window::init()
     glfwSetFramebufferSizeCallback(mWindow, _framebufferResizeCallback);
 }
 
-void Window::vkGetRequiredExtensions(const char**& exts, uint32_t& extCount)
+void Window::vkGetRequiredExtensions(const char**& exts, uint32_t& extCount) const
 {
     exts = glfwGetRequiredInstanceExtensions(&extCount);
+}
+
+VkResult Window::vkCreateSurface(VkInstance instance, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface) const
+{
+    return glfwCreateWindowSurface(instance, mWindow, allocator, surface);
 }
 
 bool Window::shouldClose()

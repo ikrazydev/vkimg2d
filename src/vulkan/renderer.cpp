@@ -1,4 +1,3 @@
-#include <vulkan/renderer.hpp>
 #include "renderer.hpp"
 
 #include <iostream>
@@ -15,6 +14,8 @@ void VkRenderer::init(VkRendererConfig config)
     if (config.enableValidationLayers) {
         _setupDebugMessenger();
     }
+
+    _initDevice(config);
 }
 
 void VkRenderer::_createInstance(const VkRendererConfig& config)
@@ -29,8 +30,7 @@ void VkRenderer::_createInstance(const VkRendererConfig& config)
     vk::InstanceCreateInfo createInfo{};
     createInfo.setPApplicationInfo(&appInfo);
     createInfo.setFlags(vk::InstanceCreateFlags(VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR));
-    createInfo.setEnabledExtensionCount(config.requiredExtensionCount);
-    createInfo.setPpEnabledExtensionNames(config.requiredExtensions);
+    createInfo.setPEnabledExtensionNames(config.requiredExtensions);
 
     vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
     if (config.enableValidationLayers) {
@@ -93,4 +93,9 @@ void VkRenderer::_populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreate
     );
     createInfo.setPfnUserCallback(debugCallback);
     createInfo.setPUserData(nullptr);
+}
+
+void VkRenderer::_initDevice(const VkRendererConfig& config)
+{
+    mDevice.init(config, mInstance);
 }

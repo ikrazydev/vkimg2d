@@ -33,6 +33,7 @@ add_executable(${PROJECT_NAME}
     src/window.cpp
 
     src/vulkan/renderer.cpp
+    src/vulkan/device.cpp
 
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_demo.cpp

@@ -3,13 +3,17 @@
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
 
+#include <vulkan/device.hpp>
+#include <window.hpp>
+
 struct VkRendererConfig
 {
-    const char** requiredExtensions;
-    uint32_t requiredExtensionCount;
+    const std::vector<const char*>& requiredExtensions;
 
     bool enableValidationLayers;
     const std::vector<const char*>& validationLayers;
+
+    const Window& window;
 };
 
 class VkRenderer
@@ -23,6 +27,10 @@ private:
     void _setupDebugMessenger();
     void _populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo);
 
+    void _initDevice(const VkRendererConfig& config);
+
     vk::UniqueInstance mInstance;
     vk::UniqueDebugUtilsMessengerEXT mDebugMessenger;
+
+    Device mDevice;
 };

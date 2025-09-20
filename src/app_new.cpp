@@ -1,10 +1,18 @@
-#include <app_new.hpp>
+#include "app_new.hpp"
 
 #if DEBUG
     static const bool gEnableValidationLayers  = true;
 #else
     static const bool gEnableValidationLayers  = false;
 #endif
+
+static const std::vector<const char*> gDeviceExtensions = {
+#ifdef __APPLE__
+    "VK_KHR_portability_subset",
+#endif
+
+    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+};
 
 static const std::vector<const char*> gValidationLayers = {
     "VK_LAYER_KHRONOS_validation",
@@ -45,11 +53,12 @@ void App::_initVulkan()
     auto exts = _getExtensionNames();
 
     VkRendererConfig config{
-        .requiredExtensions = exts.data(),
-        .requiredExtensionCount = static_cast<uint32_t>(exts.size()),
+        .requiredExtensions = exts,
 
         .enableValidationLayers = gEnableValidationLayers,
         .validationLayers = gValidationLayers,
+
+        .window = mWindow,
     };
 
     mVkRenderer = VkRenderer();
