@@ -18,21 +18,23 @@ static const std::vector<const char*> gValidationLayers = {
     "VK_LAYER_KHRONOS_validation",
 };
 
+App::App() : mWindow{ WindowConfig{} }
+{
+    _createWindow();
+    _initVulkan();
+}
+
 void App::run()
 {
-    _initWindow();
-    _initVulkan();
-
     _loop();
 }
 
-void App::_initWindow()
+void App::_createWindow()
 {
-    mWindow = Window();
-    mWindow.init();
+    mWindow.create();
 }
 
-std::vector<const char *> App::_getExtensionNames()
+std::vector<const char*> App::_getExtensionNames() const
 {
     const char** winExts;
     uint32_t winExtCount;
@@ -62,7 +64,7 @@ void App::_initVulkan()
         .window = mWindow,
     };
 
-    mVkRenderer.init(config);
+    mVkRenderer.emplace(config);
 }
 
 void App::_loop()

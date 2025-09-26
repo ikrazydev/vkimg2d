@@ -9,17 +9,24 @@
 static const uint32_t WIN_WIDTH = 800;
 static const uint32_t WIN_HEIGHT = 600;
 
+struct WindowConfig
+{
+};
+
 class Window
 {
 public:
+    Window(WindowConfig config);
     ~Window();
 
-    void init();
+    void create();
 
     void vkGetRequiredExtensions(const char**& exts, uint32_t& extCount) const;
     VkResult vkCreateSurface(VkInstance instance, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface) const;
 
-    bool shouldClose();
+    void getFramebufferSize(uint32_t* width, uint32_t* height) const;
+
+    bool shouldClose() const;
     void update();
 private:
     static void _framebufferResizeCallback(GLFWwindow* window, int width, int height);

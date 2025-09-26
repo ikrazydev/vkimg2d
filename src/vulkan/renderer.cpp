@@ -4,7 +4,7 @@
 
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE;
 
-void VkRenderer::init(VkRendererConfig config)
+VkRenderer::VkRenderer(VkRendererConfig config)
 {
     VULKAN_HPP_DEFAULT_DISPATCHER.init();
 
@@ -15,7 +15,7 @@ void VkRenderer::init(VkRendererConfig config)
         _setupDebugMessenger();
     }
 
-    _initDevice(config);
+    mDevice.emplace(config, mInstance);
 }
 
 void VkRenderer::_createInstance(const VkRendererConfig& config)
@@ -29,7 +29,7 @@ void VkRenderer::_createInstance(const VkRendererConfig& config)
 
     vk::InstanceCreateInfo createInfo{};
     createInfo.setPApplicationInfo(&appInfo);
-    createInfo.setFlags(vk::InstanceCreateFlags(VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR));
+    createInfo.setFlags(vk::InstanceCreateFlagBits::eEnumeratePortabilityKHR);
     createInfo.setPEnabledExtensionNames(config.requiredExtensions);
 
     vk::DebugUtilsMessengerCreateInfoEXT debugCreateInfo{};
@@ -92,9 +92,4 @@ void VkRenderer::_populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreate
     );
     createInfo.setPfnUserCallback(debugCallback);
     createInfo.setPUserData(nullptr);
-}
-
-void VkRenderer::_initDevice(const VkRendererConfig& config)
-{
-    mDevice.init(config, mInstance);
 }

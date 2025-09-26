@@ -34,6 +34,7 @@ add_executable(${PROJECT_NAME}
 
     src/vulkan/renderer.cpp
     src/vulkan/device.cpp
+    src/vulkan/swapchain.cpp
 
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_demo.cpp

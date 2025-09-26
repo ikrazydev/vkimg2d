@@ -2,19 +2,23 @@
 
 #include <stdexcept>
 
+Window::Window(WindowConfig config) : mWindow(nullptr)
+{
+    glfwInit();
+
+    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+}
+
 Window::~Window()
 {
     glfwDestroyWindow(mWindow);
     glfwTerminate();
 }
 
-void Window::init()
+void Window::create()
 {
-    glfwInit();
-
-    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-
     mWindow = glfwCreateWindow(WIN_WIDTH, WIN_HEIGHT, "VkImg2D", nullptr, nullptr);
+
     glfwSetWindowUserPointer(mWindow, this);
     glfwSetFramebufferSizeCallback(mWindow, _framebufferResizeCallback);
 }
@@ -29,7 +33,16 @@ VkResult Window::vkCreateSurface(VkInstance instance, const VkAllocationCallback
     return glfwCreateWindowSurface(instance, mWindow, allocator, surface);
 }
 
-bool Window::shouldClose()
+void Window::getFramebufferSize(uint32_t* width, uint32_t* height) const
+{
+    int w, h;
+    glfwGetFramebufferSize(mWindow, &w, &h);
+
+    *width = static_cast<uint32_t>(w);
+    *height = static_cast<uint32_t>(h);
+}
+
+bool Window::shouldClose() const
 {
     return glfwWindowShouldClose(mWindow);
 }

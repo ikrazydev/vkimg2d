@@ -2,8 +2,10 @@
 
 #define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
 #include <vulkan/vulkan.hpp>
+#include <vulkan/swapchain.hpp>
 
 #include <optional>
+#include <vector>
 
 struct VkRendererConfig;
 class Window;
@@ -27,24 +29,36 @@ struct _DeviceCreationResult
     vk::Queue presentQueue;
 };
 
+struct DeviceSwapchainDetails
+{
+    vk::SurfaceCapabilitiesKHR capabilities;
+    std::vector<vk::SurfaceFormatKHR> formats;
+    std::vector<vk::PresentModeKHR> presentModes;
+};
+
 class Device
 {
 public:
-    void init(const VkRendererConfig& config, const vk::UniqueInstance& instance);
-
+    Device(const VkRendererConfig& config, vk::UniqueInstance& instance);
     ~Device();
-private:
-    void _createSurface(const vk::UniqueInstance& instance, const Window& window);
 
-    vk::PhysicalDevice _pickPhysicalDevice(const vk::UniqueInstance& instance, const std::vector<const char*>& extensions);
+    DeviceSwapchainDetails querySwapchainDetails(vk::PhysicalDevice device) const;
+    DeviceSwapchainDetails querySwapchainDetails() const;
+
+    const Window& getWindow() const;
+private:
+    void _createSurface(const Window& window);
+
+    vk::PhysicalDevice _pickPhysicalDevice(const std::vector<const char*>& extensions);
 
     uint32_t _calculateDeviceScore(const vk::PhysicalDevice& device, const std::vector<const char*>& extensions);
-    DeviceQueueFamilies _findQueueFamilies(const vk::PhysicalDevice& device);
+    DeviceQueueFamilies _findQueueFamilies(const vk::PhysicalDevice& device) const;
     bool _verifyDeviceExtensionSupport(vk::PhysicalDevice device, const std::vector<const char*>& extensions);
 
     _DeviceCreationResult _createLogicalDevice(const VkRendererConfig& config);
 
-    vk::Instance mInstance;
+    vk::UniqueInstance& mInstance;
+    const Window& mWindow;
 
     vk::SurfaceKHR mSurface;
 
@@ -54,4 +68,6 @@ private:
     vk::UniqueDevice mDevice;
     vk::Queue mGraphicsQueue;
     vk::Queue mPresentQueue;
+
+    std::optional<DeviceSwapchain> mSwapchain;
 };

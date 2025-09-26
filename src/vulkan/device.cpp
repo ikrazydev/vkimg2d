@@ -8,46 +8,49 @@
 #include <set>
 #include <stdexcept>
 
-void Device::init(const VkRendererConfig& config, const vk::UniqueInstance& instance)
+Device::Device(const VkRendererConfig& config, vk::UniqueInstance& instance)
+    : mInstance{instance}
+    , mWindow{config.window}
 {
-    mInstance = instance.get();
+    _createSurface(mWindow);
 
-    _createSurface(instance, config.window);
-
-    mPhysicalDevice = _pickPhysicalDevice(instance, config.deviceExtensions);
+    mPhysicalDevice = _pickPhysicalDevice(config.deviceExtensions);
     mQueueFamilies = _findQueueFamilies(mPhysicalDevice);
 
     auto deviceCreationResult = _createLogicalDevice(config);
     mDevice = std::move(deviceCreationResult.device);
     mGraphicsQueue = deviceCreationResult.graphicsQueue;
     mPresentQueue = deviceCreationResult.presentQueue;
+
+    DeviceSwapchainConfig swapchainConfig{
+        .preferredFormat = vk::Format::eB8G8R8A8Srgb,
+        .preferredColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear,
+    };
+
+    mSwapchain.emplace(*this, swapchainConfig);
 }
 
 Device::~Device()
 {
-    if (mInstance == VK_NULL_HANDLE) {
-        return;
-    }
-
-    mInstance.destroySurfaceKHR(mSurface);
+    mInstance->destroySurfaceKHR(mSurface);
 }
 
-void Device::_createSurface(const vk::UniqueInstance& instance, const Window& window)
+void Device::_createSurface(const Window& window)
 {
     VkSurfaceKHR rawSurface;
-    if (window.vkCreateSurface(instance.get(), nullptr, &rawSurface) != VK_SUCCESS) {
+    if (window.vkCreateSurface(mInstance.get(), nullptr, &rawSurface) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create window surface.");
     }
 
     mSurface = vk::SurfaceKHR(rawSurface);
 }
 
-vk::PhysicalDevice Device::_pickPhysicalDevice(const vk::UniqueInstance& instance, const std::vector<const char*>& extensions)
+vk::PhysicalDevice Device::_pickPhysicalDevice(const std::vector<const char*>& extensions)
 {
     vk::PhysicalDevice physicalDevice = VK_NULL_HANDLE;
     uint32_t deviceScore = 0;
 
-    auto devices = instance->enumeratePhysicalDevices();
+    auto devices = mInstance->enumeratePhysicalDevices();
 
     if (devices.size() == 0) {
         throw std::runtime_error("No found GPUs for Vulkan.");
@@ -70,6 +73,8 @@ vk::PhysicalDevice Device::_pickPhysicalDevice(const vk::UniqueInstance& instanc
     if (physicalDevice == VK_NULL_HANDLE) {
         throw std::runtime_error("No suitable GPU found.");
     }
+
+    std::cout << "Chosen GPU: " << physicalDevice.getProperties().deviceName << "\n";
 
     return physicalDevice;
 }
@@ -108,11 +113,11 @@ uint32_t Device::_calculateDeviceScore(const vk::PhysicalDevice& device, const s
         return 0;
     }
 
-    // auto swapchainSupport = querySwapchainSupport(device);
+    auto swapchainDetails = querySwapchainDetails(device);
 
-    // if (swapchainSupport.formats.empty() || swapchainSupport.presentModes.empty()) {
-    //     return 0;
-    // }
+    if (swapchainDetails.formats.empty() || swapchainDetails.presentModes.empty()) {
+        return 0;
+    }
 
     return score;
 }
@@ -130,7 +135,30 @@ bool Device::_verifyDeviceExtensionSupport(vk::PhysicalDevice device, const std:
     return requiredExts.empty();
 }
 
-DeviceQueueFamilies Device::_findQueueFamilies(const vk::PhysicalDevice& device)
+DeviceSwapchainDetails Device::querySwapchainDetails(vk::PhysicalDevice device) const
+{
+    auto capabilities = device.getSurfaceCapabilitiesKHR(mSurface);
+    auto formats = device.getSurfaceFormatsKHR(mSurface);
+    auto presentModes = device.getSurfacePresentModesKHR(mSurface);
+
+    return DeviceSwapchainDetails{
+        .capabilities = std::move(capabilities),
+        .formats = std::move(formats),
+        .presentModes = std::move(presentModes),
+    };
+}
+
+DeviceSwapchainDetails Device::querySwapchainDetails() const
+{
+    return querySwapchainDetails(mPhysicalDevice);
+}
+
+const Window& Device::getWindow() const
+{
+    return mWindow;
+}
+
+DeviceQueueFamilies Device::_findQueueFamilies(const vk::PhysicalDevice& device) const
 {
     DeviceQueueFamilies indices{};
 
