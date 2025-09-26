@@ -1,12 +1,12 @@
 #pragma once
 
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
-#include <vulkan/vulkan.hpp>
+#include <vulkan/include.hpp>
 #include <vulkan/swapchain.hpp>
 
 #include <optional>
 #include <vector>
 
+class VkRenderer;
 struct VkRendererConfig;
 class Window;
 
@@ -39,13 +39,17 @@ struct DeviceSwapchainDetails
 class Device
 {
 public:
-    Device(const VkRendererConfig& config, vk::UniqueInstance& instance);
-    ~Device();
+    Device(const VkRendererConfig& config, VkRenderer& renderer);
 
     DeviceSwapchainDetails querySwapchainDetails(vk::PhysicalDevice device) const;
     DeviceSwapchainDetails querySwapchainDetails() const;
 
+    vk::UniqueSwapchainKHR createSwapchainKHR(const vk::SwapchainCreateInfoKHR info) const;
+
     const Window& getWindow() const;
+    const vk::SurfaceKHR getSurface() const;
+    const DeviceQueueFamilies& getQueueFamilies() const;
+    const vk::Device getVkDevice() const;
 private:
     void _createSurface(const Window& window);
 
@@ -57,10 +61,9 @@ private:
 
     _DeviceCreationResult _createLogicalDevice(const VkRendererConfig& config);
 
-    vk::UniqueInstance& mInstance;
+    VkRenderer& mRenderer;
+    const vk::UniqueInstance& mInstance;
     const Window& mWindow;
-
-    vk::SurfaceKHR mSurface;
 
     vk::PhysicalDevice mPhysicalDevice;
     DeviceQueueFamilies mQueueFamilies;

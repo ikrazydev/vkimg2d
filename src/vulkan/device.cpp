@@ -8,12 +8,11 @@
 #include <set>
 #include <stdexcept>
 
-Device::Device(const VkRendererConfig& config, vk::UniqueInstance& instance)
-    : mInstance{instance}
+Device::Device(const VkRendererConfig& config, VkRenderer& renderer)
+    : mRenderer(renderer)
+    , mInstance{mRenderer.getInstance()}
     , mWindow{config.window}
 {
-    _createSurface(mWindow);
-
     mPhysicalDevice = _pickPhysicalDevice(config.deviceExtensions);
     mQueueFamilies = _findQueueFamilies(mPhysicalDevice);
 
@@ -28,21 +27,6 @@ Device::Device(const VkRendererConfig& config, vk::UniqueInstance& instance)
     };
 
     mSwapchain.emplace(*this, swapchainConfig);
-}
-
-Device::~Device()
-{
-    mInstance->destroySurfaceKHR(mSurface);
-}
-
-void Device::_createSurface(const Window& window)
-{
-    VkSurfaceKHR rawSurface;
-    if (window.vkCreateSurface(mInstance.get(), nullptr, &rawSurface) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create window surface.");
-    }
-
-    mSurface = vk::SurfaceKHR(rawSurface);
 }
 
 vk::PhysicalDevice Device::_pickPhysicalDevice(const std::vector<const char*>& extensions)
@@ -137,9 +121,11 @@ bool Device::_verifyDeviceExtensionSupport(vk::PhysicalDevice device, const std:
 
 DeviceSwapchainDetails Device::querySwapchainDetails(vk::PhysicalDevice device) const
 {
-    auto capabilities = device.getSurfaceCapabilitiesKHR(mSurface);
-    auto formats = device.getSurfaceFormatsKHR(mSurface);
-    auto presentModes = device.getSurfacePresentModesKHR(mSurface);
+    auto surface = getSurface();
+
+    auto capabilities = device.getSurfaceCapabilitiesKHR(surface);
+    auto formats = device.getSurfaceFormatsKHR(surface);
+    auto presentModes = device.getSurfacePresentModesKHR(surface);
 
     return DeviceSwapchainDetails{
         .capabilities = std::move(capabilities),
@@ -158,10 +144,26 @@ const Window& Device::getWindow() const
     return mWindow;
 }
 
+const vk::SurfaceKHR Device::getSurface() const
+{
+    return mRenderer.getSurface();
+}
+
+const DeviceQueueFamilies& Device::getQueueFamilies() const
+{
+    return mQueueFamilies;
+}
+
+const vk::Device Device::getVkDevice() const
+{
+    return mDevice.get();
+}
+
 DeviceQueueFamilies Device::_findQueueFamilies(const vk::PhysicalDevice& device) const
 {
     DeviceQueueFamilies indices{};
 
+    auto surface = getSurface();
     auto families = device.getQueueFamilyProperties();
 
     for (uint32_t i = 0; i < families.size(); i++) {
@@ -170,7 +172,7 @@ DeviceQueueFamilies Device::_findQueueFamilies(const vk::PhysicalDevice& device)
             indices.graphicsFamily = i;
         }
 
-        auto presentSupport = device.getSurfaceSupportKHR(i, mSurface);
+        auto presentSupport = device.getSurfaceSupportKHR(i, surface);
         if (presentSupport) {
             indices.presentFamily = i;
         }
@@ -223,4 +225,11 @@ _DeviceCreationResult Device::_createLogicalDevice(const VkRendererConfig& confi
         .graphicsQueue = graphicsQueue,
         .presentQueue = presentQueue,
     };
+}
+
+vk::UniqueSwapchainKHR Device::createSwapchainKHR(const vk::SwapchainCreateInfoKHR info) const
+{
+    auto result = mDevice->createSwapchainKHRUnique(info);
+
+    return result;
 }

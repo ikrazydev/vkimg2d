@@ -15,7 +15,28 @@ VkRenderer::VkRenderer(VkRendererConfig config)
         _setupDebugMessenger();
     }
 
-    mDevice.emplace(config, mInstance);
+    _createSurface(config.window);
+
+    mDevice.emplace(config, *this);
+}
+
+VkRenderer::~VkRenderer()
+{
+    mDevice.reset();
+
+    if (mSurface != VK_NULL_HANDLE) {
+        mInstance->destroySurfaceKHR(mSurface);
+    }
+}
+
+const vk::UniqueInstance& VkRenderer::getInstance() const
+{
+    return mInstance;
+}
+
+const vk::SurfaceKHR VkRenderer::getSurface() const
+{
+    return mSurface;
 }
 
 void VkRenderer::_createInstance(const VkRendererConfig& config)
@@ -92,4 +113,14 @@ void VkRenderer::_populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreate
     );
     createInfo.setPfnUserCallback(debugCallback);
     createInfo.setPUserData(nullptr);
+}
+
+void VkRenderer::_createSurface(const Window& window)
+{
+    VkSurfaceKHR rawSurface;
+    if (window.vkCreateSurface(mInstance.get(), nullptr, &rawSurface) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create window surface.");
+    }
+
+    mSurface = vk::SurfaceKHR(rawSurface);
 }

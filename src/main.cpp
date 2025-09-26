@@ -9,7 +9,7 @@ int main() {
 
     try {
         app.run();
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         std::cerr << "[[EXCEPTION OCCURRED]]\n";
         std::cerr << e.what() << "\n";
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
+#include <vulkan/include.hpp>
 
 class Device;
 
@@ -15,13 +15,22 @@ class DeviceSwapchain
 public:
     DeviceSwapchain(Device& device, const DeviceSwapchainConfig& config);
 private:
-    vk::SurfaceFormatKHR _chooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& formats) const;
-    vk::PresentModeKHR _choosePresentMode(const std::vector<vk::PresentModeKHR>& presentModes) const;
-    vk::Extent2D _chooseExtent2D(const vk::SurfaceCapabilitiesKHR& capabilities) const;
+    void _chooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& formats);
+    void _choosePresentMode(const std::vector<vk::PresentModeKHR>& presentModes);
+    void _chooseExtent(const vk::SurfaceCapabilitiesKHR& capabilities);
+
+    uint32_t _getImageCount(const vk::SurfaceCapabilitiesKHR& capabilities) const;
+    void _createSwapchain(const vk::SurfaceCapabilitiesKHR& capabilities);
+    void _createSwapchainImages(const vk::SurfaceCapabilitiesKHR& capabilities);
 
     Device& mDevice;
+    const DeviceSwapchainConfig& mConfig;
 
     vk::SurfaceFormatKHR mSurfaceFormat;
     vk::PresentModeKHR mPresentMode;
-    vk::Extent2D mExtent2D;
+    vk::Extent2D mExtent;
+
+    vk::UniqueSwapchainKHR mSwapchain;
+    std::vector<vk::Image> mSwapchainImages;
+    std::vector<vk::UniqueImageView> mSwapchainImageViews;
 };

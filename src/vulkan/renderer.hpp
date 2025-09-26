@@ -1,7 +1,6 @@
 #pragma once
 
-#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
-#include <vulkan/vulkan.hpp>
+#include <vulkan/include.hpp>
 
 #include <optional>
 
@@ -23,6 +22,10 @@ class VkRenderer
 {
 public:
     VkRenderer(VkRendererConfig config);
+    ~VkRenderer();
+
+    const vk::UniqueInstance& getInstance() const;
+    const vk::SurfaceKHR getSurface() const;
 private:
     void _createInstance(const VkRendererConfig& config);
     void _printExtensions();
@@ -30,8 +33,11 @@ private:
     void _setupDebugMessenger();
     void _populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo);
 
+    void _createSurface(const Window& window);
+
     vk::UniqueInstance mInstance;
     vk::UniqueDebugUtilsMessengerEXT mDebugMessenger;
 
+    vk::SurfaceKHR mSurface;
     std::optional<Device> mDevice;
 };
