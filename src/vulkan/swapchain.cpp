@@ -3,6 +3,7 @@
 #include <vulkan/device.hpp>
 #include <window.hpp>
 
+#include <array>
 #include <limits>
 
 DeviceSwapchain::DeviceSwapchain(Device& device, const DeviceSwapchainConfig& config)
@@ -79,34 +80,32 @@ void DeviceSwapchain::_createSwapchain(const vk::SurfaceCapabilitiesKHR& capabil
     auto imageCount = _getImageCount(capabilities);
 
     vk::SwapchainCreateInfoKHR createInfo{};
-    createInfo.surface = mDevice.getSurface();
-    createInfo.presentMode = mPresentMode;
-    createInfo.minImageCount = imageCount;
-    createInfo.imageFormat = mSurfaceFormat.format;
-    createInfo.imageColorSpace = mSurfaceFormat.colorSpace;
-    createInfo.imageExtent = mExtent;
-    createInfo.imageArrayLayers = 1;
-    createInfo.imageUsage = vk::ImageUsageFlagBits::eColorAttachment;
+    createInfo.setSurface(mDevice.getSurface());
+    createInfo.setPresentMode(mPresentMode);
+    createInfo.setMinImageCount(imageCount);
+    createInfo.setImageFormat(mSurfaceFormat.format);
+    createInfo.setImageColorSpace(mSurfaceFormat.colorSpace);
+    createInfo.setImageExtent(mExtent);
+    createInfo.setImageArrayLayers(1);
+    createInfo.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment);
 
     const auto& families = mDevice.getQueueFamilies();
-    uint32_t familyIndices[] = { families.graphicsFamily.value(), families.presentFamily.value() };
+    std::array familyIndices{ families.graphicsFamily.value(), families.presentFamily.value() };
 
     if (families.graphicsFamily != families.presentFamily) {
-        createInfo.imageSharingMode = vk::SharingMode::eConcurrent;
-        createInfo.queueFamilyIndexCount = 2;
-        createInfo.pQueueFamilyIndices = familyIndices;
+        createInfo.setImageSharingMode(vk::SharingMode::eConcurrent);
+        createInfo.setQueueFamilyIndices(familyIndices);
     }
     else {
-        createInfo.imageSharingMode = vk::SharingMode::eExclusive;
-        createInfo.queueFamilyIndexCount = 0;
-        createInfo.pQueueFamilyIndices = nullptr;
+        createInfo.setImageSharingMode(vk::SharingMode::eExclusive);
+        createInfo.setQueueFamilyIndices(nullptr);
     }
 
-    createInfo.preTransform = capabilities.currentTransform;
-    createInfo.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque;
+    createInfo.setPreTransform(capabilities.currentTransform);
+    createInfo.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
 
-    createInfo.clipped = vk::True;
-    createInfo.oldSwapchain = VK_NULL_HANDLE;
+    createInfo.setClipped(vk::True);
+    createInfo.setOldSwapchain(VK_NULL_HANDLE);
 
     mSwapchain = mDevice.createSwapchainKHR(createInfo);
 }
@@ -120,20 +119,20 @@ void DeviceSwapchain::_createSwapchainImages(const vk::SurfaceCapabilitiesKHR& c
 
     for (size_t i = 0; i < mSwapchainImages.size(); i++) {
         vk::ImageViewCreateInfo createInfo{};
-        createInfo.image = mSwapchainImages[i];
-        createInfo.viewType = vk::ImageViewType::e2D;
-        createInfo.format = mSurfaceFormat.format;
+        createInfo.setImage(mSwapchainImages[i]);
+        createInfo.setViewType(vk::ImageViewType::e2D);
+        createInfo.setFormat(mSurfaceFormat.format);
 
-        createInfo.components.r = vk::ComponentSwizzle::eIdentity;
-        createInfo.components.g = vk::ComponentSwizzle::eIdentity;
-        createInfo.components.b = vk::ComponentSwizzle::eIdentity;
-        createInfo.components.a = vk::ComponentSwizzle::eIdentity;
+        createInfo.components.setR(vk::ComponentSwizzle::eIdentity);
+        createInfo.components.setG(vk::ComponentSwizzle::eIdentity);
+        createInfo.components.setB(vk::ComponentSwizzle::eIdentity);
+        createInfo.components.setA(vk::ComponentSwizzle::eIdentity);
 
-        createInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
-        createInfo.subresourceRange.baseMipLevel = 0;
-        createInfo.subresourceRange.baseArrayLayer = 0;
-        createInfo.subresourceRange.levelCount = 1;
-        createInfo.subresourceRange.layerCount = 1;
+        createInfo.subresourceRange.setAspectMask(vk::ImageAspectFlagBits::eColor);
+        createInfo.subresourceRange.setBaseMipLevel(0U);
+        createInfo.subresourceRange.setBaseArrayLayer(0U);
+        createInfo.subresourceRange.setLevelCount(1U);
+        createInfo.subresourceRange.setLayerCount(1U);
 
         mSwapchainImageViews[i] = vkDevice.createImageViewUnique(createInfo);
     }

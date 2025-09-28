@@ -27,7 +27,7 @@ Renderpass::Renderpass(const Device& device, const RenderpassConfig& config)
 
     vk::SubpassDependency dependency{};
     dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL);
-    dependency.setDstSubpass(0);
+    dependency.setDstSubpass(0U);
     dependency.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
     dependency.setSrcAccessMask(vk::AccessFlags());
     dependency.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
