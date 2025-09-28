@@ -154,7 +154,7 @@ const DeviceQueueFamilies& Device::getQueueFamilies() const
     return mQueueFamilies;
 }
 
-const vk::Device Device::getVkDevice() const
+const vk::Device Device::getVkHandle() const
 {
     return mDevice.get();
 }

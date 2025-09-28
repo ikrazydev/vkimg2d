@@ -113,7 +113,7 @@ void DeviceSwapchain::_createSwapchain(const vk::SurfaceCapabilitiesKHR& capabil
 
 void DeviceSwapchain::_createSwapchainImages(const vk::SurfaceCapabilitiesKHR& capabilities)
 {
-    auto vkDevice = mDevice.getVkDevice();
+    auto vkDevice = mDevice.getVkHandle();
 
     mSwapchainImages = vkDevice.getSwapchainImagesKHR(mSwapchain.get());
     mSwapchainImageViews.resize(mSwapchainImages.size());

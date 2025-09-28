@@ -32,9 +32,12 @@ add_executable(${PROJECT_NAME}
     src/app_new.cpp
     src/window.cpp
 
-    src/vulkan/renderer.cpp
     src/vulkan/device.cpp
+    src/vulkan/renderer.cpp
+    src/vulkan/renderpass.cpp
     src/vulkan/swapchain.cpp
+
+    src/vulkan/buffer/framebuffer.cpp
 
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_demo.cpp
@@ -94,7 +97,7 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
     $<$<CONFIG:Release>:NDEBUG>
 )
 
-add_compile_definitions(VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1)
+add_compile_definitions(VULKAN_HPP_DISPATCH_LOADER_DYNAMIC=1)
 
 message(STATUS "Vulkan found: ${Vulkan_FOUND}")
 message(STATUS "Vulkan include dirs: ${Vulkan_INCLUDE_DIRS}")
