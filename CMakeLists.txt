@@ -35,9 +35,14 @@ add_executable(${PROJECT_NAME}
     src/vulkan/device.cpp
     src/vulkan/renderer.cpp
     src/vulkan/renderpass.cpp
+    src/vulkan/shader.cpp
     src/vulkan/swapchain.cpp
 
     src/vulkan/buffer/framebuffer.cpp
+
+    src/vulkan/pipeline/graphics_pipeline.cpp
+
+    src/io/binary.cpp
 
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_demo.cpp

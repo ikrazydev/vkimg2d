@@ -4,6 +4,7 @@
 
 #include <vector>
 
+class Device;
 class Renderpass;
 
 class Framebuffer
