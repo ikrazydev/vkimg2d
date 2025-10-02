@@ -3,7 +3,7 @@
 #include <io/binary.hpp>
 #include <vulkan/device.hpp>
 
-Shader::Shader(const Device& device, std::string filepath, const ShaderConfig& config)
+Shader::Shader(const Device& device, std::string_view filepath, const ShaderConfig& config)
     : mDevice{device}
     , mStageInfo{}
 {

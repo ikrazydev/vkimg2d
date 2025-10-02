@@ -2,10 +2,10 @@
 
 #include <fstream>
 #include <vector>
-#include <string>
+#include <string_view>
 
 class BinaryReader
 {
 public:
-    static std::vector<char> readFromPath(const std::string& filepath);
+    static std::vector<char> readFromPath(const std::string_view filepath);
 };

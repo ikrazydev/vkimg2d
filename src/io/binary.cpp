@@ -1,8 +1,8 @@
 #include "binary.hpp"
 
-std::vector<char> BinaryReader::readFromPath(const std::string& filepath)
+std::vector<char> BinaryReader::readFromPath(const std::string_view filepath)
 {
-    std::ifstream file(filepath, std::ios::ate | std::ios::binary);
+    std::ifstream file(filepath.data(), std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open file.");
