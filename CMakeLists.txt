@@ -39,6 +39,8 @@ add_executable(${PROJECT_NAME}
     src/vulkan/swapchain.cpp
 
     src/vulkan/buffer/framebuffer.cpp
+    src/vulkan/buffer/commandpool.cpp
+    src/vulkan/buffer/commandbuffer.cpp
 
     src/vulkan/pipeline/graphics_pipeline.cpp
 

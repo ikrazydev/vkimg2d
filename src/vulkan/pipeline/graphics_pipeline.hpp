@@ -25,9 +25,9 @@ class GraphicsPipeline
 {
 public:
     GraphicsPipeline(const Device& device, const GraphicsPipelineConfig& config);
-private:
-    auto _createShaders();
 
+    const vk::Pipeline& getVkHandle() const;
+private:
     const Device& mDevice;
     const GraphicsPipelineConfig& mConfig;
 

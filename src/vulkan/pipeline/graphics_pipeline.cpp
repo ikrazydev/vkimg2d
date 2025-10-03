@@ -8,18 +8,20 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
     : mDevice{ device }
     , mConfig{ config }
 {
-    auto shaders = _createShaders();
-    std::array shaderStages{ shaders[0].getStageInfo(), shaders[1].getStageInfo() };
+    ShaderConfig vertexShaderConfig{ .type = ShaderType::Vertex };
+    ShaderConfig fragmentShaderConfig{ .type = ShaderType::Fragment };
 
-    std::vector<vk::DynamicState> dynamicStates = {
+    Shader vertexShader{ mDevice, mConfig.vertexShaderPath, vertexShaderConfig };
+    Shader fragmentShader{ mDevice, mConfig.fragmentShaderPath, fragmentShaderConfig };
+    std::array shaderStages{ vertexShader.getStageInfo(), fragmentShader.getStageInfo() };
+
+    std::array dynamicStates = {
         vk::DynamicState::eViewport,
         vk::DynamicState::eScissor,
     };
 
     vk::PipelineDynamicStateCreateInfo dynamicState{};
-    dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamicState.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-    dynamicState.pDynamicStates = dynamicStates.data();
+    dynamicState.setDynamicStates(dynamicStates);
 
     vk::Viewport viewport{};
     viewport.x = 0.0f;
@@ -30,7 +32,7 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
     viewport.maxDepth = 1.0f;
 
     vk::Rect2D scissor{};
-    scissor.offset = { 0, 0 };
+    scissor.offset = vk::Offset2D{ 0U, 0U };
     scissor.extent = mConfig.swapchainExtent;
 
     vk::PipelineViewportStateCreateInfo viewportState{};
@@ -86,7 +88,7 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &mDescriptorSetLayout;
+    //pipelineLayoutInfo.pSetLayouts = &mDescriptorSetLayout;
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
@@ -114,13 +116,7 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
     mPipeline = mDevice.getVkHandle().createGraphicsPipelineUnique(VK_NULL_HANDLE, pipelineInfo).value;
 }
 
-auto GraphicsPipeline::_createShaders()
+const vk::Pipeline& GraphicsPipeline::getVkHandle() const
 {
-    ShaderConfig vertexShaderConfig{ .type = ShaderType::Vertex };
-    ShaderConfig fragmentShaderConfig{ .type = ShaderType::Fragment };
-
-    Shader vertexShader{ mDevice, mConfig.vertexShaderPath, vertexShaderConfig };
-    Shader fragmentShader{ mDevice, mConfig.fragmentShaderPath, fragmentShaderConfig };
-
-    return std::array{ std::move(vertexShader), std::move(fragmentShader) };
+    return mPipeline.get();
 }
