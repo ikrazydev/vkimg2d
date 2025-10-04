@@ -19,6 +19,8 @@ struct CommandBufferConfig
     
     vk::Extent2D extent;
 
+    uint32_t createCount;
+
     uint32_t drawVertexCount;
     uint32_t drawInstanceCount;
 };
@@ -29,7 +31,7 @@ public:
     CommandBuffer(const Device& device, const CommandBufferConfig& config);
 private:
     void _createCommandBuffer();
-    void _record();
+    void _record(size_t bufferIndex);
 
     const Device& mDevice;
     const CommandBufferConfig& mConfig;

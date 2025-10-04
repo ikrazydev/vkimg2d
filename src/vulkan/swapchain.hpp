@@ -25,7 +25,7 @@ private:
     void _createSwapchain(const vk::SurfaceCapabilitiesKHR& capabilities);
     void _createSwapchainImages(const vk::SurfaceCapabilitiesKHR& capabilities);
 
-    Device& mDevice;
+    const Device& mDevice;
     const DeviceSwapchainConfig& mConfig;
 
     vk::SurfaceFormatKHR mSurfaceFormat;
