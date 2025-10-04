@@ -49,6 +49,8 @@ public:
     const Window& getWindow() const;
     const vk::SurfaceKHR getSurface() const;
     const DeviceQueueFamilies& getQueueFamilies() const;
+    const DeviceSwapchain& getSwapchain() const;
+
     const vk::Device getVkHandle() const;
 private:
     void _createSurface(const Window& window);

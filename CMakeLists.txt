@@ -44,6 +44,9 @@ add_executable(${PROJECT_NAME}
 
     src/vulkan/pipeline/graphics_pipeline.cpp
 
+    src/vulkan/sync/fence.cpp
+    src/vulkan/sync/semaphore.cpp
+
     src/io/binary.cpp
 
     ${IMGUI_DIR}/imgui.cpp

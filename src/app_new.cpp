@@ -18,7 +18,10 @@ static const std::vector<const char*> gValidationLayers = {
     "VK_LAYER_KHRONOS_validation",
 };
 
-App::App() : mWindow{ WindowConfig{} }
+static const uint32_t gMaxFramesInFlight = 2;
+
+App::App()
+    : mWindow{ WindowConfig{} }
 {
     _createWindow();
     _initVulkan();

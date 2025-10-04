@@ -18,6 +18,8 @@ VkRenderer::VkRenderer(VkRendererConfig config)
     _createSurface(config.window);
 
     mDevice.emplace(config, *this);
+
+    _createSyncObjects(config);
 }
 
 VkRenderer::~VkRenderer()
@@ -37,6 +39,73 @@ const vk::UniqueInstance& VkRenderer::getInstance() const
 const vk::SurfaceKHR VkRenderer::getSurface() const
 {
     return mSurface;
+}
+
+void VkRenderer::draw()
+{
+    vkWaitForFences(mDevice, 1, &mInFlightFences[mCurrentFrame], VK_TRUE, UINT64_MAX);
+    vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]);
+
+    uint32_t imageIndex;
+    auto result = vkAcquireNextImageKHR(mDevice, mSwapchain, UINT64_MAX, mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE, &imageIndex);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        recreateSwapchain();
+        return;
+    }
+    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+        throw std::runtime_error("Failed to acquire swapchain image.");
+    }
+
+    vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]);
+
+    vkResetCommandBuffer(mCommandBuffers[mCurrentFrame], 0);
+    vkResetCommandBuffer(mImGuiCommandBuffers[mCurrentFrame], 0);
+    recordCommandBuffers(mCommandBuffers[mCurrentFrame], mImGuiCommandBuffers[mCurrentFrame], imageIndex);
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+    VkSemaphore waitSemaphores[] = { mImageAvailableSemaphores[mCurrentFrame] };
+    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    submitInfo.waitSemaphoreCount = 1;
+    submitInfo.pWaitSemaphores = waitSemaphores;
+    submitInfo.pWaitDstStageMask = waitStages;
+
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &mCommandBuffers[mCurrentFrame];
+
+    VkSemaphore signalSemaphores[] = { mRenderedPerImageSemaphores[imageIndex] };
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = signalSemaphores;
+
+    if (vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mInFlightFences[mCurrentFrame]) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to submit draw command buffer.");
+    }
+
+    VkPresentInfoKHR presentInfo{};
+    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    presentInfo.waitSemaphoreCount = 1;
+    presentInfo.pWaitSemaphores = signalSemaphores;
+
+    VkSwapchainKHR swapchains[] = { mSwapchain };
+    presentInfo.swapchainCount = 1;
+    presentInfo.pSwapchains = swapchains;
+    presentInfo.pImageIndices = &imageIndex;
+
+    presentInfo.pResults = nullptr;
+
+    result = vkQueuePresentKHR(mPresentQueue, &presentInfo);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mFramebufferResized) {
+        mFramebufferResized = false;
+        recreateSwapchain();
+    }
+    else if (result != VK_SUCCESS) {
+        throw std::runtime_error("Failed to present swapchain image.");
+    }
+
+    mCurrentFrame = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
 void VkRenderer::_createInstance(const VkRendererConfig& config)
@@ -123,4 +192,30 @@ void VkRenderer::_createSurface(const Window& window)
     }
 
     mSurface = vk::SurfaceKHR(rawSurface);
+}
+
+void VkRenderer::_createSyncObjects(const VkRendererConfig& config)
+{
+    mImageAvailableSemaphores.resize(config.framesInFlight);
+    mRenderedPerImageSemaphores.resize(mDevice.value().getSwapchain().getImageCount());
+    mInFlightFences.resize(config.framesInFlight);
+
+    vk::SemaphoreCreateInfo semaphoreInfo{};
+
+    vk::FenceCreateInfo fenceInfo{};
+    fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
+
+    for (size_t i = 0; i < config.framesInFlight; i++) {
+        if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphores[i]) != VK_SUCCESS
+            || vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFences[i]) != VK_SUCCESS)
+        {
+            throw std::runtime_error("Failed to create synchronization objects.");
+        }
+    }
+
+    for (size_t i = 0; i < mRenderedPerImageSemaphores.size(); i++) {
+        if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderedPerImageSemaphores[i]) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create synchronization objects.");
+        }
+    }
 }

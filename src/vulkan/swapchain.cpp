@@ -1,10 +1,10 @@
 #include "swapchain.hpp"
 
-#include <vulkan/device.hpp>
-#include <window.hpp>
-
 #include <array>
 #include <limits>
+
+#include <vulkan/device.hpp>
+#include <window.hpp>
 
 DeviceSwapchain::DeviceSwapchain(Device& device, const DeviceSwapchainConfig& config)
     : mDevice{ device }
@@ -18,6 +18,11 @@ DeviceSwapchain::DeviceSwapchain(Device& device, const DeviceSwapchainConfig& co
 
     _createSwapchain(details.capabilities);
     _createSwapchainImages(details.capabilities);
+}
+
+uint32_t DeviceSwapchain::getImageCount() const
+{
+    return static_cast<uint32_t>(mSwapchainImages.size());
 }
 
 void DeviceSwapchain::_chooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& formats)
@@ -65,7 +70,7 @@ void DeviceSwapchain::_chooseExtent(const vk::SurfaceCapabilitiesKHR& capabiliti
     mExtent.height = std::clamp(mExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 }
 
-uint32_t DeviceSwapchain::_getImageCount(const vk::SurfaceCapabilitiesKHR& capabilities) const
+uint32_t DeviceSwapchain::_queryImageCount(const vk::SurfaceCapabilitiesKHR& capabilities) const
 {
     uint32_t imageCount = capabilities.minImageCount + 1;
     if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount) {
@@ -77,7 +82,7 @@ uint32_t DeviceSwapchain::_getImageCount(const vk::SurfaceCapabilitiesKHR& capab
 
 void DeviceSwapchain::_createSwapchain(const vk::SurfaceCapabilitiesKHR& capabilities)
 {
-    auto imageCount = _getImageCount(capabilities);
+    auto imageCount = _queryImageCount(capabilities);
 
     vk::SwapchainCreateInfoKHR createInfo{};
     createInfo.setSurface(mDevice.getSurface());

@@ -5,6 +5,8 @@
 #include <optional>
 
 #include <vulkan/device.hpp>
+#include <vulkan/sync/fence.hpp>
+#include <vulkan/sync/semaphore.hpp>
 #include <window.hpp>
 
 struct VkRendererConfig
@@ -16,6 +18,8 @@ struct VkRendererConfig
     const std::vector<const char*>& deviceExtensions;
 
     const Window& window;
+
+    uint32_t framesInFlight;
 };
 
 class VkRenderer
@@ -26,6 +30,8 @@ public:
 
     const vk::UniqueInstance& getInstance() const;
     const vk::SurfaceKHR getSurface() const;
+
+    void draw();
 private:
     void _createInstance(const VkRendererConfig& config);
     void _printExtensions();
@@ -34,6 +40,8 @@ private:
     void _populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreateInfoEXT& createInfo);
 
     void _createSurface(const Window& window);
+
+    void _createSyncObjects(const VkRendererConfig& config);
 
     vk::UniqueInstance mInstance;
     vk::UniqueDebugUtilsMessengerEXT mDebugMessenger;

@@ -154,6 +154,11 @@ const DeviceQueueFamilies& Device::getQueueFamilies() const
     return mQueueFamilies;
 }
 
+const DeviceSwapchain& Device::getSwapchain() const
+{
+    return mSwapchain.value();
+}
+
 const vk::Device Device::getVkHandle() const
 {
     return mDevice.get();
