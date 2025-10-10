@@ -16,13 +16,28 @@ const vk::Fence Fence::getVkHandle() const
     return mFence.get();
 }
 
+void Fence::reset() const
+{
+    mDevice.getVkHandle().resetFences(getVkHandle());
+}
+
+void Fence::wait(uint64_t timeout) const
+{
+    mDevice.getVkHandle().waitForFences(getVkHandle(), vk::True, timeout);
+}
+
 BatchedFences::BatchedFences(const Device& device, const FenceConfig& config, uint32_t count)
 {
 }
 
+const Fence& BatchedFences::getFence(uint32_t index) const noexcept
+{
+    return mFences[index];
+}
+
 const vk::Fence BatchedFences::getVkHandle(uint32_t index) const
 {
-    return mFences[index].getVkHandle();
+    return getFence(index).getVkHandle();
 }
 
 uint32_t BatchedFences::getCount() const

@@ -20,9 +20,14 @@ DeviceSwapchain::DeviceSwapchain(Device& device, const DeviceSwapchainConfig& co
     _createSwapchainImages(details.capabilities);
 }
 
-uint32_t DeviceSwapchain::getImageCount() const
+uint32_t DeviceSwapchain::getImageCount() const noexcept
 {
     return static_cast<uint32_t>(mSwapchainImages.size());
+}
+
+vk::SwapchainKHR DeviceSwapchain::getVkHandle() const noexcept
+{
+    return mSwapchain.get();
 }
 
 void DeviceSwapchain::_chooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& formats)

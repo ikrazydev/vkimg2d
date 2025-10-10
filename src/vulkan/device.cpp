@@ -238,3 +238,8 @@ vk::UniqueSwapchainKHR Device::createSwapchainKHR(const vk::SwapchainCreateInfoK
 
     return result;
 }
+
+uint32_t Device::acquireNextImageKHR(vk::Semaphore semaphore, uint64_t timeout) const
+{
+    return mDevice->acquireNextImageKHR(mSwapchain.value().getVkHandle(), timeout, semaphore);
+}

@@ -43,69 +43,66 @@ const vk::SurfaceKHR VkRenderer::getSurface() const
 
 void VkRenderer::draw()
 {
-    vkWaitForFences(mDevice, 1, &mInFlightFences[mCurrentFrame], VK_TRUE, UINT64_MAX);
-    vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]);
+    const auto& device = mDevice.value();
+    const auto& swapchain = device.getSwapchain();
 
-    uint32_t imageIndex;
-    auto result = vkAcquireNextImageKHR(mDevice, mSwapchain, UINT64_MAX, mImageAvailableSemaphores[mCurrentFrame], VK_NULL_HANDLE, &imageIndex);
+    const auto& inFlightFence = mInFlightFences.value().getFence(mCurrentFrame);
+    const auto& imageAvailableSemaphore = mImageAvailableSemaphores.value().getVkHandle(mCurrentFrame);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+    inFlightFence.wait();
+    inFlightFence.reset();
+
+    uint32_t imageIndex = device.acquireNextImageKHR(imageAvailableSemaphore);
+
+    const auto& renderedPerImageSemaphore = mRenderedPerImageSemaphores.value().getVkHandle(imageIndex);
+
+    /*if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         recreateSwapchain();
         return;
     }
     else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
         throw std::runtime_error("Failed to acquire swapchain image.");
-    }
+    }*/
 
-    vkResetFences(mDevice, 1, &mInFlightFences[mCurrentFrame]);
+    inFlightFence.reset();
 
-    vkResetCommandBuffer(mCommandBuffers[mCurrentFrame], 0);
-    vkResetCommandBuffer(mImGuiCommandBuffers[mCurrentFrame], 0);
-    recordCommandBuffers(mCommandBuffers[mCurrentFrame], mImGuiCommandBuffers[mCurrentFrame], imageIndex);
+    mCommandBuffers.value().reset(mCurrentFrame);
 
-    VkSubmitInfo submitInfo{};
-    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    vk::SubmitInfo submitInfo{};
+    vk::PipelineStageFlags waitMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+    submitInfo.setWaitSemaphores(imageAvailableSemaphore);
+    submitInfo.setWaitDstStageMask({ waitMask });
 
-    VkSemaphore waitSemaphores[] = { mImageAvailableSemaphores[mCurrentFrame] };
-    VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    submitInfo.waitSemaphoreCount = 1;
-    submitInfo.pWaitSemaphores = waitSemaphores;
-    submitInfo.pWaitDstStageMask = waitStages;
+    submitInfo.setCommandBuffers(mCommandBuffers.value().getVkHandle(mCurrentFrame));
 
-    submitInfo.commandBufferCount = 1;
-    submitInfo.pCommandBuffers = &mCommandBuffers[mCurrentFrame];
+    vk::Semaphore signalSemaphores[] = { renderedPerImageSemaphore };
+    submitInfo.setSignalSemaphores(signalSemaphores);
 
-    VkSemaphore signalSemaphores[] = { mRenderedPerImageSemaphores[imageIndex] };
-    submitInfo.signalSemaphoreCount = 1;
-    submitInfo.pSignalSemaphores = signalSemaphores;
+    auto imageIndex = mDevice.value().getVkHandle().acquireNextImageKHR();
 
-    if (vkQueueSubmit(mGraphicsQueue, 1, &submitInfo, mInFlightFences[mCurrentFrame]) != VK_SUCCESS) {
+    if (vkQueueSubmit(mDevice.value().getQueueFamilies().graphicsFamily, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
         throw std::runtime_error("Failed to submit draw command buffer.");
     }
 
-    VkPresentInfoKHR presentInfo{};
-    presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    presentInfo.waitSemaphoreCount = 1;
-    presentInfo.pWaitSemaphores = signalSemaphores;
+    vk::PresentInfoKHR presentInfo{};
+    presentInfo.setWaitSemaphores(signalSemaphores);
 
-    VkSwapchainKHR swapchains[] = { mSwapchain };
-    presentInfo.swapchainCount = 1;
-    presentInfo.pSwapchains = swapchains;
-    presentInfo.pImageIndices = &imageIndex;
+    presentInfo.setSwapchains(swapchain);
+    presentInfo.setPImageIndices(&imageIndex);
 
-    presentInfo.pResults = nullptr;
+    presentInfo.setPResults(nullptr);
 
     result = vkQueuePresentKHR(mPresentQueue, &presentInfo);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mFramebufferResized) {
+    /*if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mFramebufferResized) {
         mFramebufferResized = false;
         recreateSwapchain();
     }
     else if (result != VK_SUCCESS) {
         throw std::runtime_error("Failed to present swapchain image.");
-    }
+    }*/
 
-    mCurrentFrame = (mCurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    mCurrentFrame = (mCurrentFrame + 1) % mFramesInFlight;
 }
 
 void VkRenderer::_createInstance(const VkRendererConfig& config)
@@ -194,28 +191,21 @@ void VkRenderer::_createSurface(const Window& window)
     mSurface = vk::SurfaceKHR(rawSurface);
 }
 
+void VkRenderer::_createCommandBuffers(const VkRendererConfig& config)
+{
+    CommandBufferConfig config = {
+        .createCount = config.framesInFlight
+    };
+
+    mCommandBuffers.emplace(config);
+}
+
 void VkRenderer::_createSyncObjects(const VkRendererConfig& config)
 {
-    mImageAvailableSemaphores.resize(config.framesInFlight);
-    mRenderedPerImageSemaphores.resize(mDevice.value().getSwapchain().getImageCount());
-    mInFlightFences.resize(config.framesInFlight);
+    mImageAvailableSemaphores.emplace(mDevice, config.framesInFlight);
+    mRenderedPerImageSemaphores.emplace(mDevice, mDevice.value().getSwapchain().getImageCount());
+    mInFlightFences.emplace(mDevice, config.framesInFlight);
 
-    vk::SemaphoreCreateInfo semaphoreInfo{};
-
-    vk::FenceCreateInfo fenceInfo{};
-    fenceInfo.flags = vk::FenceCreateFlagBits::eSignaled;
-
-    for (size_t i = 0; i < config.framesInFlight; i++) {
-        if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mImageAvailableSemaphores[i]) != VK_SUCCESS
-            || vkCreateFence(mDevice, &fenceInfo, nullptr, &mInFlightFences[i]) != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to create synchronization objects.");
-        }
-    }
-
-    for (size_t i = 0; i < mRenderedPerImageSemaphores.size(); i++) {
-        if (vkCreateSemaphore(mDevice, &semaphoreInfo, nullptr, &mRenderedPerImageSemaphores[i]) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create synchronization objects.");
-        }
-    }
+    mCurrentFrame = 0;
+    mFramesInFlight = config.framesInFlight;
 }

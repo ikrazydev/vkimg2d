@@ -11,17 +11,7 @@ CommandBuffer::CommandBuffer(const Device& device, const CommandBufferConfig& co
     _createCommandBuffer();
 }
 
-void CommandBuffer::_createCommandBuffer()
-{
-    vk::CommandBufferAllocateInfo allocateInfo{};
-    allocateInfo.setCommandPool(mConfig.commandPool.getVkHandle());
-    allocateInfo.setLevel(vk::CommandBufferLevel::ePrimary);
-    allocateInfo.setCommandBufferCount(mConfig.createCount);
-
-    mCommandBuffers = mDevice.getVkHandle().allocateCommandBuffersUnique(allocateInfo);
-}
-
-void CommandBuffer::_record(size_t bufferIndex)
+void CommandBuffer::record(size_t bufferIndex)
 {
     const auto& buffer = mCommandBuffers[bufferIndex];
     
@@ -63,4 +53,25 @@ void CommandBuffer::_record(size_t bufferIndex)
     buffer->endRenderPass();
 
     buffer->end();
+}
+
+void CommandBuffer::reset(size_t bufferIndex)
+{
+    const auto& buffer = mCommandBuffers[bufferIndex];
+    buffer->reset();
+}
+
+const vk::CommandBuffer CommandBuffer::getVkHandle(size_t bufferIndex) const noexcept
+{
+    return mCommandBuffers[bufferIndex].get();
+}
+
+void CommandBuffer::_createCommandBuffer()
+{
+    vk::CommandBufferAllocateInfo allocateInfo{};
+    allocateInfo.setCommandPool(mConfig.commandPool.getVkHandle());
+    allocateInfo.setLevel(vk::CommandBufferLevel::ePrimary);
+    allocateInfo.setCommandBufferCount(mConfig.createCount);
+
+    mCommandBuffers = mDevice.getVkHandle().allocateCommandBuffersUnique(allocateInfo);
 }

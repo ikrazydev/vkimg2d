@@ -29,9 +29,13 @@ class CommandBuffer
 {
 public:
     CommandBuffer(const Device& device, const CommandBufferConfig& config);
+
+    void record(size_t bufferIndex);
+    void reset(size_t bufferIndex);
+
+    [[nodiscard]] const vk::CommandBuffer getVkHandle(size_t bufferIndex) const noexcept;
 private:
     void _createCommandBuffer();
-    void _record(size_t bufferIndex);
 
     const Device& mDevice;
     const CommandBufferConfig& mConfig;
