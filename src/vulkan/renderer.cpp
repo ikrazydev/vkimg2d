@@ -19,6 +19,11 @@ VkRenderer::VkRenderer(VkRendererConfig config)
 
     mDevice.emplace(config, *this);
 
+    _createRenderpass();
+    _createFramebuffers();
+    _createCommandPool();
+    _createGraphicsPipeline();
+    _createCommandBuffers(config);
     _createSyncObjects(config);
 }
 
@@ -73,26 +78,24 @@ void VkRenderer::draw()
     submitInfo.setWaitSemaphores(imageAvailableSemaphore);
     submitInfo.setWaitDstStageMask({ waitMask });
 
-    submitInfo.setCommandBuffers(mCommandBuffers.value().getVkHandle(mCurrentFrame));
+    const auto commandBuffer = mCommandBuffers.value().getVkHandle(mCurrentFrame);
+    submitInfo.setCommandBuffers(commandBuffer);
 
     vk::Semaphore signalSemaphores[] = { renderedPerImageSemaphore };
     submitInfo.setSignalSemaphores(signalSemaphores);
 
-    auto imageIndex = mDevice.value().getVkHandle().acquireNextImageKHR();
-
-    if (vkQueueSubmit(mDevice.value().getQueueFamilies().graphicsFamily, 1, &submitInfo, inFlightFence) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to submit draw command buffer.");
-    }
+    device.getGraphicsQueue().submit(submitInfo, inFlightFence.getVkHandle());
 
     vk::PresentInfoKHR presentInfo{};
     presentInfo.setWaitSemaphores(signalSemaphores);
 
-    presentInfo.setSwapchains(swapchain);
+    const auto swapchainHandle = swapchain.getVkHandle();
+    presentInfo.setSwapchains(swapchainHandle);
     presentInfo.setPImageIndices(&imageIndex);
 
     presentInfo.setPResults(nullptr);
 
-    result = vkQueuePresentKHR(mPresentQueue, &presentInfo);
+    device.getPresentQueue().presentKHR(presentInfo);
 
     /*if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mFramebufferResized) {
         mFramebufferResized = false;
@@ -191,20 +194,80 @@ void VkRenderer::_createSurface(const Window& window)
     mSurface = vk::SurfaceKHR(rawSurface);
 }
 
-void VkRenderer::_createCommandBuffers(const VkRendererConfig& config)
+void VkRenderer::_createRenderpass()
 {
-    CommandBufferConfig config = {
-        .createCount = config.framesInFlight
+    RenderpassConfig config = {
+        .format = mDevice.value().getSwapchain().getSurfaceFormat().format,
+        .colorLoadOp = vk::AttachmentLoadOp::eClear,
     };
 
-    mCommandBuffers.emplace(config);
+    mRenderpass.emplace(mDevice.value(), config);
+}
+
+void VkRenderer::_createFramebuffers()
+{
+    const auto& swapchain = mDevice.value().getSwapchain();
+    auto count = swapchain.getImageCount();
+
+    mFramebuffers.reserve(count);
+
+    for (size_t i = 0; i < count; i++) {
+        std::vector attachments{
+            swapchain.getImageView(i),
+        };
+
+        mFramebuffers.emplace_back(mRenderpass.value(), attachments, swapchain.getExtent());
+    }
+}
+
+void VkRenderer::_createCommandPool()
+{
+    CommandPoolConfig config = {
+        .queueFamilyIndex = mDevice.value().getQueueFamilies().graphicsFamily.value(),
+    };
+
+    mCommandPool.emplace(mDevice.value(), config);
+}
+
+void VkRenderer::_createGraphicsPipeline()
+{
+    GraphicsPipelineConfig config = {
+        .vertexShaderPath = "shaders/vertex.spv",
+        .fragmentShaderPath = "shaders/fragment.spv",
+
+        .swapchainExtent = mDevice.value().getSwapchain().getExtent(),
+
+        .renderpass = mRenderpass.value(),
+        .subpass = 0,
+    };
+
+    mPipeline.emplace(mDevice.value(), config);
+}
+
+void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)
+{
+    CommandBufferConfig config = {
+        .commandPool = mCommandPool.value(),
+        .renderpass = mRenderpass.value(),
+        .framebuffer = mFramebuffers[0],
+        .pipeline = mPipeline.value(),
+
+        .extent = mDevice.value().getSwapchain().getExtent(),
+
+        .createCount = rendererConfig.framesInFlight,
+
+        .drawVertexCount = 3U,
+        .drawInstanceCount = 3U,
+    };
+
+    mCommandBuffers.emplace(mDevice.value(), config);
 }
 
 void VkRenderer::_createSyncObjects(const VkRendererConfig& config)
 {
-    mImageAvailableSemaphores.emplace(mDevice, config.framesInFlight);
-    mRenderedPerImageSemaphores.emplace(mDevice, mDevice.value().getSwapchain().getImageCount());
-    mInFlightFences.emplace(mDevice, config.framesInFlight);
+    mImageAvailableSemaphores.emplace(mDevice.value(), config.framesInFlight);
+    mRenderedPerImageSemaphores.emplace(mDevice.value(), mDevice.value().getSwapchain().getImageCount());
+    mInFlightFences.emplace(mDevice.value(), FenceConfig{ .signaled = true }, config.framesInFlight);
 
     mCurrentFrame = 0;
     mFramesInFlight = config.framesInFlight;

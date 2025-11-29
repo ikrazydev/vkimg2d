@@ -159,6 +159,16 @@ const DeviceSwapchain& Device::getSwapchain() const
     return mSwapchain.value();
 }
 
+const vk::Queue& Device::getGraphicsQueue() const
+{
+    return mGraphicsQueue;
+}
+
+const vk::Queue& Device::getPresentQueue() const
+{
+    return mPresentQueue;
+}
+
 const vk::Device Device::getVkHandle() const
 {
     return mDevice.get();
@@ -241,5 +251,5 @@ vk::UniqueSwapchainKHR Device::createSwapchainKHR(const vk::SwapchainCreateInfoK
 
 uint32_t Device::acquireNextImageKHR(vk::Semaphore semaphore, uint64_t timeout) const
 {
-    return mDevice->acquireNextImageKHR(mSwapchain.value().getVkHandle(), timeout, semaphore);
+    return mDevice->acquireNextImageKHR(mSwapchain.value().getVkHandle(), timeout, semaphore).value;
 }

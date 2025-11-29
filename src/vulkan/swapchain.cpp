@@ -25,9 +25,24 @@ uint32_t DeviceSwapchain::getImageCount() const noexcept
     return static_cast<uint32_t>(mSwapchainImages.size());
 }
 
-vk::SwapchainKHR DeviceSwapchain::getVkHandle() const noexcept
+const vk::SwapchainKHR DeviceSwapchain::getVkHandle() const noexcept
 {
     return mSwapchain.get();
+}
+
+vk::SurfaceFormatKHR DeviceSwapchain::getSurfaceFormat() const noexcept
+{
+    return mSurfaceFormat;
+}
+
+vk::Extent2D DeviceSwapchain::getExtent() const noexcept
+{
+    return mExtent;
+}
+
+const vk::ImageView DeviceSwapchain::getImageView(size_t index) const noexcept
+{
+    return mSwapchainImageViews[index].get();
 }
 
 void DeviceSwapchain::_chooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& formats)
@@ -75,7 +90,7 @@ void DeviceSwapchain::_chooseExtent(const vk::SurfaceCapabilitiesKHR& capabiliti
     mExtent.height = std::clamp(mExtent.height, capabilities.minImageExtent.height, capabilities.maxImageExtent.height);
 }
 
-uint32_t DeviceSwapchain::_queryImageCount(const vk::SurfaceCapabilitiesKHR& capabilities) const
+uint32_t DeviceSwapchain::_queryImageCount(const vk::SurfaceCapabilitiesKHR& capabilities) const noexcept
 {
     uint32_t imageCount = capabilities.minImageCount + 1;
     if (capabilities.maxImageCount > 0 && imageCount > capabilities.maxImageCount) {

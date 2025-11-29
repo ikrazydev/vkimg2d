@@ -11,7 +11,7 @@ Fence::Fence(const Device& device, const FenceConfig& config)
     mFence = mDevice.getVkHandle().createFenceUnique(createInfo);
 }
 
-const vk::Fence Fence::getVkHandle() const
+const vk::Fence Fence::getVkHandle() const noexcept
 {
     return mFence.get();
 }
@@ -28,6 +28,9 @@ void Fence::wait(uint64_t timeout) const
 
 BatchedFences::BatchedFences(const Device& device, const FenceConfig& config, uint32_t count)
 {
+    mFences.reserve(count);
+
+    std::generate_n(std::back_inserter(mFences), count, [&device, config]() { return Fence{ device, config }; });
 }
 
 const Fence& BatchedFences::getFence(uint32_t index) const noexcept
@@ -35,12 +38,12 @@ const Fence& BatchedFences::getFence(uint32_t index) const noexcept
     return mFences[index];
 }
 
-const vk::Fence BatchedFences::getVkHandle(uint32_t index) const
+const vk::Fence BatchedFences::getVkHandle(uint32_t index) const noexcept
 {
     return getFence(index).getVkHandle();
 }
 
-uint32_t BatchedFences::getCount() const
+uint32_t BatchedFences::getCount() const noexcept
 {
     return static_cast<uint32_t>(mFences.size());
 }

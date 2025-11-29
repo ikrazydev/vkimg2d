@@ -16,7 +16,11 @@ public:
     DeviceSwapchain(Device& device, const DeviceSwapchainConfig& config);
 
     [[nodiscard]] uint32_t getImageCount() const noexcept;
-    [[nodiscard]] vk::SwapchainKHR getVkHandle() const noexcept;
+    [[nodiscard]] const vk::SwapchainKHR getVkHandle() const noexcept;
+
+    [[nodiscard]] vk::SurfaceFormatKHR getSurfaceFormat() const noexcept;
+    [[nodiscard]] vk::Extent2D getExtent() const noexcept;
+    [[nodiscard]] const vk::ImageView getImageView(size_t index) const noexcept;
 private:
     void _chooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& formats);
     void _choosePresentMode(const std::vector<vk::PresentModeKHR>& presentModes);

@@ -5,7 +5,11 @@
 #include <optional>
 
 #include <vulkan/device.hpp>
+#include <vulkan/renderpass.hpp>
 #include <vulkan/buffer/commandbuffer.hpp>
+#include <vulkan/buffer/commandpool.hpp>
+#include <vulkan/buffer/framebuffer.hpp>
+#include <vulkan/pipeline/graphics_pipeline.hpp>
 #include <vulkan/sync/fence.hpp>
 #include <vulkan/sync/semaphore.hpp>
 #include <window.hpp>
@@ -42,6 +46,10 @@ private:
 
     void _createSurface(const Window& window);
 
+    void _createRenderpass();
+    void _createFramebuffers();
+    void _createCommandPool();
+    void _createGraphicsPipeline();
     void _createCommandBuffers(const VkRendererConfig& config);
     void _createSyncObjects(const VkRendererConfig& config);
 
@@ -50,11 +58,16 @@ private:
 
     vk::SurfaceKHR mSurface;
     std::optional<Device> mDevice;
+    std::optional<Renderpass> mRenderpass;
+    std::vector<Framebuffer> mFramebuffers;
 
     uint32_t mCurrentFrame;
     uint32_t mFramesInFlight;
 
+    std::optional<CommandPool> mCommandPool;
     std::optional<CommandBuffer> mCommandBuffers;
+
+    std::optional<GraphicsPipeline> mPipeline;
 
     std::optional<BatchedSemaphores> mImageAvailableSemaphores;
     std::optional<BatchedSemaphores> mRenderedPerImageSemaphores;

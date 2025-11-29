@@ -52,6 +52,9 @@ public:
     const DeviceQueueFamilies& getQueueFamilies() const;
     const DeviceSwapchain& getSwapchain() const;
 
+    const vk::Queue& getGraphicsQueue() const;
+    const vk::Queue& getPresentQueue() const;
+
     const vk::Device getVkHandle() const;
 private:
     void _createSurface(const Window& window);
