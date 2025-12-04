@@ -35,10 +35,22 @@ public:
 
     [[nodiscard]] const vk::CommandBuffer getVkHandle(size_t bufferIndex) const noexcept;
 private:
-    void _createCommandBuffer();
-
     const Device& mDevice;
     const CommandBufferConfig& mConfig;
     
     std::vector<vk::UniqueCommandBuffer> mCommandBuffers;
+};
+
+class SingleTimeCommandBuffer
+{
+public:
+    SingleTimeCommandBuffer(const Device& device, const CommandPool& commandPool);
+    ~SingleTimeCommandBuffer();
+
+    const vk::CommandBuffer getVkHandle() const;
+private:
+    const Device& mDevice;
+    const GraphicsPipeline& mPipeline;
+
+    vk::UniqueCommandBuffer mCommandBuffer;
 };

@@ -4,11 +4,21 @@
 #include <vulkan/renderpass.hpp>
 #include <vulkan/buffer/framebuffer.hpp>
 
+std::vector<vk::UniqueCommandBuffer> createCommandBuffers(const vk::Device device, const vk::CommandPool pool, uint32_t createCount)
+{
+    vk::CommandBufferAllocateInfo allocateInfo{};
+    allocateInfo.setCommandPool(pool);
+    allocateInfo.setLevel(vk::CommandBufferLevel::ePrimary);
+    allocateInfo.setCommandBufferCount(createCount);
+
+    return device.allocateCommandBuffersUnique(allocateInfo);
+}
+
 CommandBuffer::CommandBuffer(const Device& device, const CommandBufferConfig& config)
     : mDevice{ device }
     , mConfig{ config }
 {
-    _createCommandBuffer();
+    mCommandBuffers = createCommandBuffers(device.getVkHandle(), config.commandPool.getVkHandle(), config.createCount);
 }
 
 void CommandBuffer::record(size_t bufferIndex)
@@ -66,12 +76,31 @@ const vk::CommandBuffer CommandBuffer::getVkHandle(size_t bufferIndex) const noe
     return mCommandBuffers[bufferIndex].get();
 }
 
-void CommandBuffer::_createCommandBuffer()
+SingleTimeCommandBuffer::SingleTimeCommandBuffer(const Device& device, const CommandPool& commandPool)
+    : mDevice{ device }
 {
-    vk::CommandBufferAllocateInfo allocateInfo{};
-    allocateInfo.setCommandPool(mConfig.commandPool.getVkHandle());
-    allocateInfo.setLevel(vk::CommandBufferLevel::ePrimary);
-    allocateInfo.setCommandBufferCount(mConfig.createCount);
+    auto buffers = createCommandBuffers(device.getVkHandle(), commandPool.getVkHandle(), 1U);
+    mCommandBuffer = std::move(buffers[0]);
 
-    mCommandBuffers = mDevice.getVkHandle().allocateCommandBuffersUnique(allocateInfo);
+    vk::CommandBufferBeginInfo beginInfo{};
+    beginInfo.setFlags(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+    mCommandBuffer->begin(beginInfo);
+}
+
+SingleTimeCommandBuffer::~SingleTimeCommandBuffer()
+{
+    mCommandBuffer->end();
+
+    vk::SubmitInfo submitInfo{};
+    submitInfo.setCommandBuffers(mCommandBuffer.get());
+
+    const auto graphicsQueue = mDevice.getGraphicsQueue();
+    graphicsQueue.submit(submitInfo);
+    graphicsQueue.waitIdle();
+}
+
+const vk::CommandBuffer SingleTimeCommandBuffer::getVkHandle() const
+{
+    return mCommandBuffer.get();
 }

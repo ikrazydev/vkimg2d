@@ -144,6 +144,11 @@ const Window& Device::getWindow() const
     return mWindow;
 }
 
+const vk::PhysicalDevice Device::getPhysicalDevice() const
+{
+    return mPhysicalDevice;
+}
+
 const vk::SurfaceKHR Device::getSurface() const
 {
     return mRenderer.getSurface();

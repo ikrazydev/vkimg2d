@@ -38,9 +38,11 @@ add_executable(${PROJECT_NAME}
     src/vulkan/shader.cpp
     src/vulkan/swapchain.cpp
 
-    src/vulkan/buffer/framebuffer.cpp
+    src/vulkan/buffer/buffer.cpp
     src/vulkan/buffer/commandpool.cpp
     src/vulkan/buffer/commandbuffer.cpp
+    src/vulkan/buffer/framebuffer.cpp
+    src/vulkan/buffer/texture.cpp
 
     src/vulkan/pipeline/graphics_pipeline.cpp
 
@@ -48,6 +50,7 @@ add_executable(${PROJECT_NAME}
     src/vulkan/sync/semaphore.cpp
 
     src/io/binary.cpp
+    src/io/image.cpp
 
     ${IMGUI_DIR}/imgui.cpp
     ${IMGUI_DIR}/imgui_demo.cpp

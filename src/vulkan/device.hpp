@@ -48,6 +48,7 @@ public:
     uint32_t acquireNextImageKHR(vk::Semaphore semaphore, uint64_t timeout = UINT64_MAX) const;
 
     const Window& getWindow() const;
+    const vk::PhysicalDevice getPhysicalDevice() const;
     const vk::SurfaceKHR getSurface() const;
     const DeviceQueueFamilies& getQueueFamilies() const;
     const DeviceSwapchain& getSwapchain() const;
