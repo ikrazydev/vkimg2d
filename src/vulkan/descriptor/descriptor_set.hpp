@@ -25,4 +25,6 @@ class DescriptorSet
 {
 public:
     DescriptorSet(const Device& device, const DescriptorSetConfig& config);
+private:
+    std::vector<vk::UniqueDescriptorSet> mSets;
 };

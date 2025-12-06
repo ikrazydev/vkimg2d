@@ -18,6 +18,8 @@ public:
     const vk::Image getVkHandle() const;
     const vk::DeviceMemory getMemory() const;
 
+    const vk::ImageView getImageView() const;
+
     const Device& getDevice() const;
 private:
     void transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout);

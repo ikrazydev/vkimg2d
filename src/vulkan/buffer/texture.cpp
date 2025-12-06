@@ -69,6 +69,11 @@ const vk::DeviceMemory TextureImage::getMemory() const
     return mMemory.get();
 }
 
+const vk::ImageView TextureImage::getImageView() const
+{
+    return mImageView.value().getVkHandle();
+}
+
 const Device& TextureImage::getDevice() const
 {
     return mDevice;

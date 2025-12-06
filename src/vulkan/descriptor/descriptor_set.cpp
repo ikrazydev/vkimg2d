@@ -10,20 +10,16 @@ DescriptorSet::DescriptorSet(const Device& device, const DescriptorSetConfig& co
     allocInfo.descriptorPool = config.descriptorPool.getVkHandle();
     allocInfo.setSetLayouts(layouts);
 
-    mDescriptorSets.resize(allocInfo.descriptorSetCount);
-
-    if (vkAllocateDescriptorSets(mDevice, &allocInfo, mDescriptorSets.data()) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to allocate descriptor sets.");
-    }
+    mSets = device.getVkHandle().allocateDescriptorSetsUnique(allocInfo);
 
     for (size_t i = 0; i < config.count; i++) {
         vk::DescriptorImageInfo imageInfo{};
         imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        imageInfo.imageView = config.texture.getView();
+        imageInfo.imageView = config.texture.getImageView();
         imageInfo.sampler = config.sampler.getVkHandle();
 
         vk::WriteDescriptorSet descriptorWrite{};
-        descriptorWrite.dstSet = mDescriptorSets[i];
+        descriptorWrite.dstSet = mSets[i].get();
         descriptorWrite.dstBinding = 0U;
         descriptorWrite.dstArrayElement = 0U;
         descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
