@@ -29,3 +29,8 @@ DescriptorSet::DescriptorSet(const Device& device, const DescriptorSetConfig& co
         device.getVkHandle().updateDescriptorSets(descriptorWrite, nullptr);
     }
 }
+
+const vk::DescriptorSet DescriptorSet::getVkHandle(size_t index) const
+{
+    return mSets[index].get();
+}

@@ -2,6 +2,7 @@
 
 #include <vulkan/device.hpp>
 #include <vulkan/renderpass.hpp>
+#include <vulkan/buffer/buffer.hpp>
 #include <vulkan/buffer/framebuffer.hpp>
 
 std::vector<vk::UniqueCommandBuffer> createCommandBuffers(const vk::Device device, const vk::CommandPool pool, uint32_t createCount)
@@ -33,7 +34,7 @@ void CommandBuffer::record(size_t bufferIndex)
 
     vk::RenderPassBeginInfo renderPassInfo{};
     renderPassInfo.setRenderPass(mConfig.renderpass.getVkHandle());
-    renderPassInfo.setFramebuffer(mConfig.framebuffer.getVkHandle());
+    renderPassInfo.setFramebuffer(mConfig.framebuffers[bufferIndex].getVkHandle());
     renderPassInfo.renderArea.setOffset({ 0u, 0u });
     renderPassInfo.renderArea.setExtent(mConfig.extent);
 
@@ -43,6 +44,12 @@ void CommandBuffer::record(size_t bufferIndex)
     buffer->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
     buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, mConfig.pipeline.getVkHandle());
+
+    vk::Buffer vertexBuffers[] = { mConfig.vertexBuffer.getVkHandle()};
+    vk::DeviceSize offsets[] = { 0U };
+    buffer->bindVertexBuffers(0U, vertexBuffers, offsets);
+
+    buffer->bindIndexBuffer(mConfig.indexBuffer.getVkHandle(), 0U, vk::IndexType::eUint32);
 
     vk::Viewport viewport{};
     viewport.setX(0.0f);
@@ -58,7 +65,10 @@ void CommandBuffer::record(size_t bufferIndex)
     scissor.setExtent(mConfig.extent);
     buffer->setScissor(0u, { scissor });
 
-    buffer->draw(mConfig.drawVertexCount, mConfig.drawInstanceCount, 0u, 0u);
+    const auto descriptorSet = mConfig.descriptorSet.getVkHandle(bufferIndex);
+    buffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mConfig.pipeline.getLayout(), 0U, descriptorSet, 0U);
+
+    buffer->drawIndexed(mConfig.drawIndexCount, mConfig.drawInstanceCount, 0U, 0U, 0U);
 
     buffer->endRenderPass();
 

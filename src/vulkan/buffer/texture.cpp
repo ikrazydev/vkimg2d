@@ -21,8 +21,7 @@ TextureImage::TextureImage(const Device& device, const CommandPool& commandPool,
 
     Buffer stagingBuffer{ device, stagingBufferConfig };
 
-    void* data;
-    deviceHandle.mapMemory(stagingBuffer.getMemory(), 0U, imageSize, vk::MemoryMapFlags());
+    void* data = deviceHandle.mapMemory(stagingBuffer.getMemory(), 0U, imageSize, vk::MemoryMapFlags());
     memcpy(data, image.pixels, static_cast<size_t>(imageSize));
     deviceHandle.unmapMemory(stagingBuffer.getMemory());
 
@@ -56,7 +55,7 @@ TextureImage::TextureImage(const Device& device, const CommandPool& commandPool,
     stagingBuffer.copyToImage(mImage.get(), static_cast<uint32_t>(image.texWidth), static_cast<uint32_t>(image.texHeight));
     transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
-    mImageView.emplace(mImage);
+    mImageView.emplace(mDevice, mImage.get());
 }
 
 const vk::Image TextureImage::getVkHandle() const
@@ -126,10 +125,10 @@ void TextureImage::transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageLay
     commandBuffer.getVkHandle().pipelineBarrier(srcStage, dstStage, vk::DependencyFlags(), 1, nullptr, 0, nullptr, 0, &barrier);
 }
 
-TextureImageView::TextureImageView(const TextureImage& image)
+TextureImageView::TextureImageView(const Device& device, const vk::Image image)
 {
     vk::ImageViewCreateInfo createInfo{};
-    createInfo.image = image.getVkHandle();
+    createInfo.image = image;
     createInfo.viewType = vk::ImageViewType::e2D;
     createInfo.format = vk::Format::eR8G8B8A8Srgb;
 
@@ -144,7 +143,7 @@ TextureImageView::TextureImageView(const TextureImage& image)
     createInfo.subresourceRange.levelCount = 1U;
     createInfo.subresourceRange.layerCount = 1U;
 
-    mView = image.getDevice().getVkHandle().createImageViewUnique(createInfo);
+    mView = device.getVkHandle().createImageViewUnique(createInfo);
 }
 
 const vk::ImageView TextureImageView::getVkHandle() const

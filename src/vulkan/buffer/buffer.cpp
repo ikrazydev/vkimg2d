@@ -83,3 +83,66 @@ uint32_t Buffer::findMemoryType(vk::PhysicalDevice physicalDevice, uint32_t type
 
     throw std::runtime_error("Failed to find suitable memory type.");
 }
+
+Buffer Buffer::createTransitioned(const Device& device, const TransitionedBufferConfig& config)
+{
+    BufferConfig stagingBufferConfig = {
+        .size = config.size,
+        .usage = vk::BufferUsageFlagBits::eTransferSrc,
+        .properties = vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent,
+
+        .commandPool = config.commandPool,
+    };
+
+    Buffer stagingBuffer{ device, stagingBufferConfig };
+
+    void* data = device.getVkHandle().mapMemory(stagingBuffer.getMemory(), 0U, config.size, vk::MemoryMapFlags());
+    memcpy(data, config.data, static_cast<size_t>(config.size));
+    device.getVkHandle().unmapMemory(stagingBuffer.getMemory());
+
+    BufferConfig bufferConfig = {
+        .size = config.size,
+        .usage = vk::BufferUsageFlagBits::eTransferDst | config.usage,
+        .properties = vk::MemoryPropertyFlagBits::eDeviceLocal,
+
+        .commandPool = config.commandPool,
+    };
+
+    Buffer buffer{ device, bufferConfig };
+
+    stagingBuffer.copy(buffer, config.size);
+
+    return buffer;
+}
+
+Buffer Buffer::createVertex(const Device& device, const CommandPool& commandPool, const std::vector<Vertex>& vertices)
+{
+    vk::DeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+
+    TransitionedBufferConfig config = {
+        .commandPool = commandPool,
+
+        .size = bufferSize,
+        .data = vertices.data(),
+
+        .usage = vk::BufferUsageFlagBits::eVertexBuffer,
+    };
+
+    return createTransitioned(device, config);
+}
+
+Buffer Buffer::createIndex(const Device& device, const CommandPool& commandPool, const std::vector<uint32_t>& indices)
+{
+    vk::DeviceSize bufferSize = sizeof(indices[0]) * indices.size();
+
+    TransitionedBufferConfig config = {
+        .commandPool = commandPool,
+
+        .size = bufferSize,
+        .data = indices.data(),
+
+        .usage = vk::BufferUsageFlagBits::eIndexBuffer,
+    };
+
+    return createTransitioned(device, config);
+}

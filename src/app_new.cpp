@@ -20,6 +20,17 @@ static const std::vector<const char*> gValidationLayers = {
 
 static const uint32_t gMaxFramesInFlight = 2;
 
+static const std::vector<Vertex> gVertices = {
+    {{ -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }},
+    {{ 1.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f }},
+    {{ 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }},
+    {{ -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f }},
+};
+
+static const std::vector<uint32_t> gIndices = {
+    0, 1, 2, 2, 3, 0,
+};
+
 App::App()
     : mWindow{ WindowConfig{} }
 {
@@ -63,6 +74,11 @@ void App::_initVulkan()
         .enableValidationLayers = gEnableValidationLayers,
         .validationLayers = gValidationLayers,
         .deviceExtensions = gDeviceExtensions,
+
+        .vertices = gVertices,
+        .indices = gIndices,
+
+        .framesInFlight = gMaxFramesInFlight,
 
         .window = mWindow,
     };

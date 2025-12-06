@@ -6,9 +6,16 @@
 
 #include <vulkan/device.hpp>
 #include <vulkan/renderpass.hpp>
+#include <vulkan/sampler.hpp>
+#include <vulkan/vertex.hpp>
+#include <vulkan/buffer/buffer.hpp>
 #include <vulkan/buffer/commandbuffer.hpp>
 #include <vulkan/buffer/commandpool.hpp>
 #include <vulkan/buffer/framebuffer.hpp>
+#include <vulkan/buffer/texture.hpp>
+#include <vulkan/descriptor/descriptor_layout.hpp>
+#include <vulkan/descriptor/descriptor_pool.hpp>
+#include <vulkan/descriptor/descriptor_set.hpp>
 #include <vulkan/pipeline/graphics_pipeline.hpp>
 #include <vulkan/sync/fence.hpp>
 #include <vulkan/sync/semaphore.hpp>
@@ -22,9 +29,12 @@ struct VkRendererConfig
     const std::vector<const char*>& validationLayers;
     const std::vector<const char*>& deviceExtensions;
 
-    const Window& window;
+    const std::vector<Vertex>& vertices;
+    const std::vector<uint32_t>& indices;
 
     uint32_t framesInFlight;
+    
+    const Window& window;
 };
 
 class VkRenderer
@@ -49,6 +59,9 @@ private:
     void _createRenderpass();
     void _createFramebuffers();
     void _createCommandPool();
+    void _createBuffers(const VkRendererConfig& config);
+    void _createTexture(const VkRendererConfig& config);
+    void _createDescriptors(const VkRendererConfig& config);
     void _createGraphicsPipeline();
     void _createCommandBuffers(const VkRendererConfig& config);
     void _createSyncObjects(const VkRendererConfig& config);
@@ -65,6 +78,17 @@ private:
     uint32_t mFramesInFlight;
 
     std::optional<CommandPool> mCommandPool;
+
+    std::optional<Buffer> mVertexBuffer;
+    std::optional<Buffer> mIndexBuffer;
+
+    std::optional<TextureImage> mTexture;
+    std::optional<Sampler> mSampler;
+
+    std::optional<DescriptorLayout> mDescriptorLayout;
+    std::optional<DescriptorPool> mDescriptorPool;
+    std::optional<DescriptorSet> mDescriptorSet;
+
     std::optional<CommandBuffer> mCommandBuffers;
 
     std::optional<GraphicsPipeline> mPipeline;

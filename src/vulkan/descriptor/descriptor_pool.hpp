@@ -19,4 +19,4 @@ public:
     const vk::DescriptorPool getVkHandle() const;
 private:
     vk::UniqueDescriptorPool mPool;
-}
+};

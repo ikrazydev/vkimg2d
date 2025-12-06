@@ -8,6 +8,8 @@
 #include <vulkan/descriptor/descriptor_layout.hpp>
 #include <vulkan/descriptor/descriptor_pool.hpp>
 
+class Device;
+
 struct DescriptorSetConfig
 {
     const DescriptorLayout& descriptorLayout;
@@ -19,12 +21,12 @@ struct DescriptorSetConfig
     size_t count;
 };
 
-class Device;
-
 class DescriptorSet
 {
 public:
     DescriptorSet(const Device& device, const DescriptorSetConfig& config);
+
+    const vk::DescriptorSet getVkHandle(size_t index) const;
 private:
     std::vector<vk::UniqueDescriptorSet> mSets;
 };

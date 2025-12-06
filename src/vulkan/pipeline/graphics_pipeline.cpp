@@ -4,6 +4,7 @@
 #include <vulkan/renderpass.hpp>
 #include <vulkan/shader.hpp>
 #include <vulkan/vertex.hpp>
+#include <vulkan/descriptor/descriptor_layout.hpp>
 
 GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineConfig& config)
     : mDevice{ device }
@@ -88,8 +89,8 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
     colorBlending.blendConstants[3] = 0.0f;
 
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &mDescriptorSetLayout;
+    const auto descriptorLayout = config.descriptorLayout.getVkHandle();
+    pipelineLayoutInfo.setSetLayouts(descriptorLayout);
     pipelineLayoutInfo.pushConstantRangeCount = 0;
     pipelineLayoutInfo.pPushConstantRanges = nullptr;
 
@@ -133,4 +134,9 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
 const vk::Pipeline GraphicsPipeline::getVkHandle() const
 {
     return mPipeline.get();
+}
+
+const vk::PipelineLayout GraphicsPipeline::getLayout() const
+{
+    return mPipelineLayout.get();
 }

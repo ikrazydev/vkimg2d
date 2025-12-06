@@ -1,14 +1,15 @@
 #pragma once
 
-#include <vulkan/include.hpp>
-
 #include <array>
 #include <string_view>
 #include <optional>
 #include <vector>
 
+#include <vulkan/include.hpp>
+
 class Device;
 class Renderpass;
+class DescriptorLayout;
 
 struct GraphicsPipelineConfig
 {
@@ -19,6 +20,8 @@ struct GraphicsPipelineConfig
 
     const Renderpass& renderpass;
     uint32_t subpass;
+
+    const DescriptorLayout& descriptorLayout;
 };
 
 class GraphicsPipeline
@@ -27,6 +30,7 @@ public:
     GraphicsPipeline(const Device& device, const GraphicsPipelineConfig& config);
 
     const vk::Pipeline getVkHandle() const;
+    const vk::PipelineLayout getLayout() const;
 private:
     const Device& mDevice;
     const GraphicsPipelineConfig& mConfig;

@@ -4,7 +4,6 @@
 #include <string_view>
 #include <optional>
 
-#define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
 struct ImageLoadResult

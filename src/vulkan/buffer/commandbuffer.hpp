@@ -2,10 +2,12 @@
 
 #include <vulkan/include.hpp>
 #include <vulkan/buffer/commandpool.hpp>
+#include <vulkan/descriptor/descriptor_set.hpp>
 #include <vulkan/pipeline/graphics_pipeline.hpp>
 
 #include <vector>
 
+class Buffer;
 class Device;
 class Renderpass;
 class Framebuffer;
@@ -14,14 +16,18 @@ struct CommandBufferConfig
 {
     const CommandPool& commandPool;
     const Renderpass& renderpass;
-    const Framebuffer& framebuffer;
+    const std::vector<Framebuffer>& framebuffers;
+    const DescriptorSet& descriptorSet;
     const GraphicsPipeline& pipeline;
     
     vk::Extent2D extent;
 
     uint32_t createCount;
 
-    uint32_t drawVertexCount;
+    const Buffer& vertexBuffer;
+    const Buffer& indexBuffer;
+
+    uint32_t drawIndexCount;
     uint32_t drawInstanceCount;
 };
 
@@ -50,7 +56,6 @@ public:
     const vk::CommandBuffer getVkHandle() const;
 private:
     const Device& mDevice;
-    const GraphicsPipeline& mPipeline;
 
     vk::UniqueCommandBuffer mCommandBuffer;
 };

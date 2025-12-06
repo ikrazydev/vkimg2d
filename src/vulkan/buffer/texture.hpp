@@ -10,6 +10,16 @@
 
 class Device;
 
+class TextureImageView
+{
+public:
+    TextureImageView(const Device& device, const vk::Image image);
+
+    const vk::ImageView getVkHandle() const;
+private:
+    vk::UniqueImageView mView;
+};
+
 class TextureImage
 {
 public:
@@ -31,14 +41,4 @@ private:
     vk::UniqueDeviceMemory mMemory;
 
     std::optional<TextureImageView> mImageView;
-};
-
-class TextureImageView
-{
-public:
-    TextureImageView(const TextureImage& image);
-
-    const vk::ImageView getVkHandle() const;
-private:
-    vk::UniqueImageView mView;
 };

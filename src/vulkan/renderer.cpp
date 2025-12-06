@@ -2,6 +2,9 @@
 
 #include <iostream>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE;
 
 VkRenderer::VkRenderer(VkRendererConfig config)
@@ -22,6 +25,9 @@ VkRenderer::VkRenderer(VkRendererConfig config)
     _createRenderpass();
     _createFramebuffers();
     _createCommandPool();
+    _createBuffers(config);
+    _createTexture(config);
+    _createDescriptors(config);
     _createGraphicsPipeline();
     _createCommandBuffers(config);
     _createSyncObjects(config);
@@ -229,6 +235,53 @@ void VkRenderer::_createCommandPool()
     mCommandPool.emplace(mDevice.value(), config);
 }
 
+void VkRenderer::_createBuffers(const VkRendererConfig& config)
+{
+    mVertexBuffer.emplace(Buffer::createVertex(mDevice.value(), mCommandPool.value(), config.vertices));
+    mIndexBuffer.emplace(Buffer::createIndex(mDevice.value(), mCommandPool.value(), config.indices));
+}
+
+void VkRenderer::_createTexture(const VkRendererConfig& config)
+{
+    auto image = Image{ "samples/sculpture_statue.jpg" };
+    auto loadedImage = image.load();
+    mTexture.emplace(mDevice.value(), mCommandPool.value(), loadedImage);
+
+    SamplerConfig samplerConfig = {};
+    mSampler.emplace(mDevice.value(), samplerConfig);
+}
+
+void VkRenderer::_createDescriptors(const VkRendererConfig& config)
+{
+    DescriptorLayoutConfig layoutConfig = {
+        .binding = 0U,
+        .type = vk::DescriptorType::eCombinedImageSampler,
+        .stages = vk::ShaderStageFlagBits::eFragment,
+    };
+
+    mDescriptorLayout.emplace(mDevice.value(), layoutConfig);
+
+    DescriptorPoolConfig poolConfig = {
+        .type = vk::DescriptorType::eCombinedImageSampler,
+        .count = static_cast<uint32_t>(config.framesInFlight),
+        .maxSets = static_cast<uint32_t>(config.framesInFlight),
+    };
+
+    mDescriptorPool.emplace(mDevice.value(), poolConfig);
+
+    DescriptorSetConfig setConfig = {
+        .descriptorLayout = mDescriptorLayout.value(),
+        .descriptorPool = mDescriptorPool.value(),
+
+        .texture = mTexture.value(),
+        .sampler = mSampler.value(),
+
+        .count = config.framesInFlight,
+    };
+
+    mDescriptorSet.emplace(mDevice.value(), setConfig);
+}
+
 void VkRenderer::_createGraphicsPipeline()
 {
     GraphicsPipelineConfig config = {
@@ -239,6 +292,8 @@ void VkRenderer::_createGraphicsPipeline()
 
         .renderpass = mRenderpass.value(),
         .subpass = 0,
+
+        .descriptorLayout = mDescriptorLayout.value(),
     };
 
     mPipeline.emplace(mDevice.value(), config);
@@ -249,15 +304,19 @@ void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)
     CommandBufferConfig config = {
         .commandPool = mCommandPool.value(),
         .renderpass = mRenderpass.value(),
-        .framebuffer = mFramebuffers[0],
+        .framebuffers = mFramebuffers,
+        .descriptorSet = mDescriptorSet.value(),
         .pipeline = mPipeline.value(),
 
         .extent = mDevice.value().getSwapchain().getExtent(),
 
         .createCount = rendererConfig.framesInFlight,
 
-        .drawVertexCount = 3U,
-        .drawInstanceCount = 3U,
+        .vertexBuffer = mVertexBuffer.value(),
+        .indexBuffer = mIndexBuffer.value(),
+
+        .drawIndexCount = static_cast<uint32_t>(rendererConfig.indices.size()),
+        .drawInstanceCount = 1U,
     };
 
     mCommandBuffers.emplace(mDevice.value(), config);
