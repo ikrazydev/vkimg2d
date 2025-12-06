@@ -26,7 +26,7 @@ class GraphicsPipeline
 public:
     GraphicsPipeline(const Device& device, const GraphicsPipelineConfig& config);
 
-    const vk::Pipeline& getVkHandle() const;
+    const vk::Pipeline getVkHandle() const;
 private:
     const Device& mDevice;
     const GraphicsPipelineConfig& mConfig;

@@ -35,14 +35,20 @@ add_executable(${PROJECT_NAME}
     src/vulkan/device.cpp
     src/vulkan/renderer.cpp
     src/vulkan/renderpass.cpp
+    src/vulkan/sampler.cpp
     src/vulkan/shader.cpp
     src/vulkan/swapchain.cpp
+    src/vulkan/vertex.cpp
 
     src/vulkan/buffer/buffer.cpp
     src/vulkan/buffer/commandpool.cpp
     src/vulkan/buffer/commandbuffer.cpp
     src/vulkan/buffer/framebuffer.cpp
     src/vulkan/buffer/texture.cpp
+
+    src/vulkan/descriptor/descriptor_layout.cpp
+    src/vulkan/descriptor/descriptor_pool.cpp
+    src/vulkan/descriptor/descriptor_set.cpp
 
     src/vulkan/pipeline/graphics_pipeline.cpp
 

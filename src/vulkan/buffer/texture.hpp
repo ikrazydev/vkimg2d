@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include <io/image.hpp>
 
 #include <vulkan/include.hpp>
@@ -8,10 +10,15 @@
 
 class Device;
 
-class VkTextureImage
+class TextureImage
 {
 public:
-    VkTextureImage(const Device& device, const CommandPool& commandPool, const ImageLoadResult& image);
+    TextureImage(const Device& device, const CommandPool& commandPool, const ImageLoadResult& image);
+
+    const vk::Image getVkHandle() const;
+    const vk::DeviceMemory getMemory() const;
+
+    const Device& getDevice() const;
 private:
     void transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout);
 
@@ -20,4 +27,16 @@ private:
 
     vk::UniqueImage mImage;
     vk::UniqueDeviceMemory mMemory;
+
+    std::optional<TextureImageView> mImageView;
+};
+
+class TextureImageView
+{
+public:
+    TextureImageView(const TextureImage& image);
+
+    const vk::ImageView getVkHandle() const;
+private:
+    vk::UniqueImageView mView;
 };

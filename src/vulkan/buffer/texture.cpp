@@ -4,7 +4,7 @@
 #include <vulkan/buffer/buffer.hpp>
 #include <vulkan/buffer/commandbuffer.hpp>
 
-VkTextureImage::VkTextureImage(const Device& device, const CommandPool& commandPool, const ImageLoadResult& image)
+TextureImage::TextureImage(const Device& device, const CommandPool& commandPool, const ImageLoadResult& image)
     : mDevice{ device }
     , mCommandPool{ commandPool }
 {
@@ -55,9 +55,26 @@ VkTextureImage::VkTextureImage(const Device& device, const CommandPool& commandP
     transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eTransferDstOptimal);
     stagingBuffer.copyToImage(mImage.get(), static_cast<uint32_t>(image.texWidth), static_cast<uint32_t>(image.texHeight));
     transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
+
+    mImageView.emplace(mImage);
 }
 
-void VkTextureImage::transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
+const vk::Image TextureImage::getVkHandle() const
+{
+    return mImage.get();
+}
+
+const vk::DeviceMemory TextureImage::getMemory() const
+{
+    return mMemory.get();
+}
+
+const Device& TextureImage::getDevice() const
+{
+    return mDevice;
+}
+
+void TextureImage::transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageLayout newLayout)
 {
     auto commandBuffer = SingleTimeCommandBuffer{ mDevice, mCommandPool };
 
@@ -102,4 +119,30 @@ void VkTextureImage::transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageL
     }
 
     commandBuffer.getVkHandle().pipelineBarrier(srcStage, dstStage, vk::DependencyFlags(), 1, nullptr, 0, nullptr, 0, &barrier);
+}
+
+TextureImageView::TextureImageView(const TextureImage& image)
+{
+    vk::ImageViewCreateInfo createInfo{};
+    createInfo.image = image.getVkHandle();
+    createInfo.viewType = vk::ImageViewType::e2D;
+    createInfo.format = vk::Format::eR8G8B8A8Srgb;
+
+    createInfo.components.r = vk::ComponentSwizzle::eIdentity;
+    createInfo.components.g = vk::ComponentSwizzle::eIdentity;
+    createInfo.components.b = vk::ComponentSwizzle::eIdentity;
+    createInfo.components.a = vk::ComponentSwizzle::eIdentity;
+
+    createInfo.subresourceRange.aspectMask = vk::ImageAspectFlagBits::eColor;
+    createInfo.subresourceRange.baseMipLevel = 0U;
+    createInfo.subresourceRange.baseArrayLayer = 0U;
+    createInfo.subresourceRange.levelCount = 1U;
+    createInfo.subresourceRange.layerCount = 1U;
+
+    mView = image.getDevice().getVkHandle().createImageViewUnique(createInfo);
+}
+
+const vk::ImageView TextureImageView::getVkHandle() const
+{
+    return mView.get();
 }

@@ -3,6 +3,7 @@
 #include <vulkan/device.hpp>
 #include <vulkan/renderpass.hpp>
 #include <vulkan/shader.hpp>
+#include <vulkan/vertex.hpp>
 
 GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineConfig& config)
     : mDevice{ device }
@@ -129,7 +130,7 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
     mPipeline = mDevice.getVkHandle().createGraphicsPipelineUnique(VK_NULL_HANDLE, pipelineInfo).value;
 }
 
-const vk::Pipeline& GraphicsPipeline::getVkHandle() const
+const vk::Pipeline GraphicsPipeline::getVkHandle() const
 {
     return mPipeline.get();
 }
