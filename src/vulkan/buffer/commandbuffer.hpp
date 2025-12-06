@@ -34,7 +34,7 @@ struct CommandBufferConfig
 class CommandBuffer
 {
 public:
-    CommandBuffer(const Device& device, const CommandBufferConfig& config);
+    CommandBuffer(const Device& device, CommandBufferConfig config);
 
     void record(size_t bufferIndex);
     void reset(size_t bufferIndex);
@@ -42,7 +42,7 @@ public:
     [[nodiscard]] const vk::CommandBuffer getVkHandle(size_t bufferIndex) const noexcept;
 private:
     const Device& mDevice;
-    const CommandBufferConfig& mConfig;
+    CommandBufferConfig mConfig;
     
     std::vector<vk::UniqueCommandBuffer> mCommandBuffers;
 };

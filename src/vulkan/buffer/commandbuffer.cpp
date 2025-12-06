@@ -15,7 +15,7 @@ std::vector<vk::UniqueCommandBuffer> createCommandBuffers(const vk::Device devic
     return device.allocateCommandBuffersUnique(allocateInfo);
 }
 
-CommandBuffer::CommandBuffer(const Device& device, const CommandBufferConfig& config)
+CommandBuffer::CommandBuffer(const Device& device, CommandBufferConfig config)
     : mDevice{ device }
     , mConfig{ config }
 {

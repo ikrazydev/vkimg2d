@@ -122,7 +122,7 @@ void TextureImage::transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageLay
         throw std::runtime_error("Unsupported layout transition.");
     }
 
-    commandBuffer.getVkHandle().pipelineBarrier(srcStage, dstStage, vk::DependencyFlags(), 1, nullptr, 0, nullptr, 0, &barrier);
+    commandBuffer.getVkHandle().pipelineBarrier(srcStage, dstStage, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
 TextureImageView::TextureImageView(const Device& device, const vk::Image image)

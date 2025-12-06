@@ -78,6 +78,7 @@ void VkRenderer::draw()
     inFlightFence.reset();
 
     mCommandBuffers.value().reset(mCurrentFrame);
+    mCommandBuffers.value().record(mCurrentFrame);
 
     vk::SubmitInfo submitInfo{};
     vk::PipelineStageFlags waitMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;

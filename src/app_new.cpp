@@ -90,5 +90,6 @@ void App::_loop()
 {
     while (!mWindow.shouldClose()) {
         mWindow.update();
+        mVkRenderer.value().draw();
     }
 }
