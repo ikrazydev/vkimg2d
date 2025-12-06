@@ -5,6 +5,7 @@
 #include <optional>
 
 #include <vulkan/device.hpp>
+#include <vulkan/glfw_surface.hpp>
 #include <vulkan/renderpass.hpp>
 #include <vulkan/sampler.hpp>
 #include <vulkan/vertex.hpp>
@@ -41,12 +42,13 @@ class VkRenderer
 {
 public:
     VkRenderer(VkRendererConfig config);
-    ~VkRenderer();
 
     const vk::UniqueInstance& getInstance() const;
     const vk::SurfaceKHR getSurface() const;
 
     void draw();
+
+    void cleanup();
 private:
     void _createInstance(const VkRendererConfig& config);
     void _printExtensions();
@@ -68,8 +70,8 @@ private:
 
     vk::UniqueInstance mInstance;
     vk::UniqueDebugUtilsMessengerEXT mDebugMessenger;
+    std::optional<GLFWVkSurface> mSurface;
 
-    vk::SurfaceKHR mSurface;
     std::optional<Device> mDevice;
     std::optional<Renderpass> mRenderpass;
     std::vector<Framebuffer> mFramebuffers;

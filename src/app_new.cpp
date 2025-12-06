@@ -41,6 +41,8 @@ App::App()
 void App::run()
 {
     _loop();
+
+    mVkRenderer->cleanup();
 }
 
 void App::_createWindow()
@@ -90,6 +92,6 @@ void App::_loop()
 {
     while (!mWindow.shouldClose()) {
         mWindow.update();
-        mVkRenderer.value().draw();
+        mVkRenderer->draw();
     }
 }

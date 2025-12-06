@@ -19,14 +19,14 @@ Renderpass::Renderpass(const Device& device, const RenderpassConfig& config)
 
     vk::AttachmentReference colorAttachmentRef{};
     colorAttachmentRef.setAttachment(0U);
-    colorAttachmentRef.setLayout(vk::ImageLayout::eAttachmentOptimal);
+    colorAttachmentRef.setLayout(vk::ImageLayout::eColorAttachmentOptimal);
 
     vk::SubpassDescription subpass{};
     subpass.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics);
     subpass.setColorAttachments(colorAttachmentRef);
 
     vk::SubpassDependency dependency{};
-    dependency.setSrcSubpass(VK_SUBPASS_EXTERNAL);
+    dependency.setSrcSubpass(vk::SubpassExternal);
     dependency.setDstSubpass(0U);
     dependency.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
     dependency.setSrcAccessMask(vk::AccessFlags());

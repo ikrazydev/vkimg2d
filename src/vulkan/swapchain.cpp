@@ -42,7 +42,7 @@ vk::Extent2D DeviceSwapchain::getExtent() const noexcept
 
 const vk::ImageView DeviceSwapchain::getImageView(size_t index) const noexcept
 {
-    return mSwapchainImageViews[index].get();
+    return mImageViews[index].get();
 }
 
 void DeviceSwapchain::_chooseSurfaceFormat(const std::vector<vk::SurfaceFormatKHR>& formats)
@@ -130,7 +130,7 @@ void DeviceSwapchain::_createSwapchain(const vk::SurfaceCapabilitiesKHR& capabil
     createInfo.setCompositeAlpha(vk::CompositeAlphaFlagBitsKHR::eOpaque);
 
     createInfo.setClipped(vk::True);
-    createInfo.setOldSwapchain(VK_NULL_HANDLE);
+    createInfo.setOldSwapchain(nullptr);
 
     mSwapchain = mDevice.createSwapchainKHR(createInfo);
 }
@@ -140,7 +140,7 @@ void DeviceSwapchain::_createSwapchainImages(const vk::SurfaceCapabilitiesKHR& c
     auto vkDevice = mDevice.getVkHandle();
 
     mSwapchainImages = vkDevice.getSwapchainImagesKHR(mSwapchain.get());
-    mSwapchainImageViews.resize(mSwapchainImages.size());
+    mImageViews.resize(mSwapchainImages.size());
 
     for (size_t i = 0; i < mSwapchainImages.size(); i++) {
         vk::ImageViewCreateInfo createInfo{};
@@ -159,6 +159,6 @@ void DeviceSwapchain::_createSwapchainImages(const vk::SurfaceCapabilitiesKHR& c
         createInfo.subresourceRange.setLevelCount(1U);
         createInfo.subresourceRange.setLayerCount(1U);
 
-        mSwapchainImageViews[i] = vkDevice.createImageViewUnique(createInfo);
+        mImageViews[i] = vkDevice.createImageViewUnique(createInfo);
     }
 }

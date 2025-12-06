@@ -58,8 +58,6 @@ public:
 
     const vk::Device getVkHandle() const;
 private:
-    void _createSurface(const Window& window);
-
     vk::PhysicalDevice _pickPhysicalDevice(const std::vector<const char*>& extensions);
 
     uint32_t _calculateDeviceScore(const vk::PhysicalDevice& device, const std::vector<const char*>& extensions);
@@ -68,6 +66,8 @@ private:
 
     _DeviceCreationResult _createLogicalDevice(const VkRendererConfig& config);
 
+    vk::UniqueDevice mDevice;
+
     VkRenderer& mRenderer;
     const vk::UniqueInstance& mInstance;
     const Window& mWindow;
@@ -75,7 +75,6 @@ private:
     vk::PhysicalDevice mPhysicalDevice;
     DeviceQueueFamilies mQueueFamilies;
 
-    vk::UniqueDevice mDevice;
     vk::Queue mGraphicsQueue;
     vk::Queue mPresentQueue;
 

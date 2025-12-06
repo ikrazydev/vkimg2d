@@ -13,6 +13,8 @@ Device::Device(const VkRendererConfig& config, VkRenderer& renderer)
     , mInstance{mRenderer.getInstance()}
     , mWindow{config.window}
 {
+    std::cout << "Hello there\n";
+
     mPhysicalDevice = _pickPhysicalDevice(config.deviceExtensions);
     mQueueFamilies = _findQueueFamilies(mPhysicalDevice);
 

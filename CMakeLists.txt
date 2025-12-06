@@ -33,6 +33,7 @@ add_executable(${PROJECT_NAME}
     src/window.cpp
 
     src/vulkan/device.cpp
+    src/vulkan/glfw_surface.cpp
     src/vulkan/renderer.cpp
     src/vulkan/renderpass.cpp
     src/vulkan/sampler.cpp

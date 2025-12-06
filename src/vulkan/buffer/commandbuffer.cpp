@@ -22,9 +22,9 @@ CommandBuffer::CommandBuffer(const Device& device, CommandBufferConfig config)
     mCommandBuffers = createCommandBuffers(device.getVkHandle(), config.commandPool.getVkHandle(), config.createCount);
 }
 
-void CommandBuffer::record(size_t bufferIndex)
+void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
 {
-    const auto& buffer = mCommandBuffers[bufferIndex];
+    const auto& buffer = mCommandBuffers[currentFrame];
     
     vk::CommandBufferBeginInfo beginInfo{};
     beginInfo.setFlags(vk::CommandBufferUsageFlags{});
@@ -34,7 +34,7 @@ void CommandBuffer::record(size_t bufferIndex)
 
     vk::RenderPassBeginInfo renderPassInfo{};
     renderPassInfo.setRenderPass(mConfig.renderpass.getVkHandle());
-    renderPassInfo.setFramebuffer(mConfig.framebuffers[bufferIndex].getVkHandle());
+    renderPassInfo.setFramebuffer(mConfig.framebuffers[imageIndex].getVkHandle());
     renderPassInfo.renderArea.setOffset({ 0u, 0u });
     renderPassInfo.renderArea.setExtent(mConfig.extent);
 
@@ -65,8 +65,8 @@ void CommandBuffer::record(size_t bufferIndex)
     scissor.setExtent(mConfig.extent);
     buffer->setScissor(0u, { scissor });
 
-    const auto descriptorSet = mConfig.descriptorSet.getVkHandle(bufferIndex);
-    buffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mConfig.pipeline.getLayout(), 0U, descriptorSet, 0U);
+    const auto descriptorSet = mConfig.descriptorSet.getVkHandle(currentFrame);
+    buffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mConfig.pipeline.getLayout(), 0U, descriptorSet, nullptr);
 
     buffer->drawIndexed(mConfig.drawIndexCount, mConfig.drawInstanceCount, 0U, 0U, 0U);
 
@@ -75,7 +75,7 @@ void CommandBuffer::record(size_t bufferIndex)
     buffer->end();
 }
 
-void CommandBuffer::reset(size_t bufferIndex)
+void CommandBuffer::reset(uint32_t bufferIndex)
 {
     const auto& buffer = mCommandBuffers[bufferIndex];
     buffer->reset();

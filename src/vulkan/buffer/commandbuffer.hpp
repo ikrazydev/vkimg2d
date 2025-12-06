@@ -36,8 +36,8 @@ class CommandBuffer
 public:
     CommandBuffer(const Device& device, CommandBufferConfig config);
 
-    void record(size_t bufferIndex);
-    void reset(size_t bufferIndex);
+    void record(uint32_t currentFrame, uint32_t imageIndex);
+    void reset(uint32_t bufferIndex);
 
     [[nodiscard]] const vk::CommandBuffer getVkHandle(size_t bufferIndex) const noexcept;
 private:

@@ -39,5 +39,5 @@ private:
 
     vk::UniqueSwapchainKHR mSwapchain;
     std::vector<vk::Image> mSwapchainImages;
-    std::vector<vk::UniqueImageView> mSwapchainImageViews;
+    std::vector<vk::UniqueImageView> mImageViews;
 };

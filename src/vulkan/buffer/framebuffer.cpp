@@ -17,7 +17,7 @@ Framebuffer::Framebuffer(const Renderpass& renderpass, const std::vector<vk::Ima
     mFramebuffer = mDevice.getVkHandle().createFramebufferUnique(framebufferInfo);
 }
 
-const vk::Framebuffer& Framebuffer::getVkHandle() const
+const vk::Framebuffer Framebuffer::getVkHandle() const
 {
     return mFramebuffer.get();
 }

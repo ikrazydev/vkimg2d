@@ -33,15 +33,6 @@ VkRenderer::VkRenderer(VkRendererConfig config)
     _createSyncObjects(config);
 }
 
-VkRenderer::~VkRenderer()
-{
-    mDevice.reset();
-
-    if (mSurface != VK_NULL_HANDLE) {
-        mInstance->destroySurfaceKHR(mSurface);
-    }
-}
-
 const vk::UniqueInstance& VkRenderer::getInstance() const
 {
     return mInstance;
@@ -49,7 +40,7 @@ const vk::UniqueInstance& VkRenderer::getInstance() const
 
 const vk::SurfaceKHR VkRenderer::getSurface() const
 {
-    return mSurface;
+    return mSurface->getVkHandle();
 }
 
 void VkRenderer::draw()
@@ -78,7 +69,7 @@ void VkRenderer::draw()
     inFlightFence.reset();
 
     mCommandBuffers.value().reset(mCurrentFrame);
-    mCommandBuffers.value().record(mCurrentFrame);
+    mCommandBuffers.value().record(mCurrentFrame, imageIndex);
 
     vk::SubmitInfo submitInfo{};
     vk::PipelineStageFlags waitMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
@@ -102,7 +93,7 @@ void VkRenderer::draw()
 
     presentInfo.setPResults(nullptr);
 
-    device.getPresentQueue().presentKHR(presentInfo);
+    auto result = device.getPresentQueue().presentKHR(presentInfo);
 
     /*if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mFramebufferResized) {
         mFramebufferResized = false;
@@ -113,6 +104,11 @@ void VkRenderer::draw()
     }*/
 
     mCurrentFrame = (mCurrentFrame + 1) % mFramesInFlight;
+}
+
+void VkRenderer::cleanup()
+{
+    mDevice.value().getVkHandle().waitIdle();
 }
 
 void VkRenderer::_createInstance(const VkRendererConfig& config)
@@ -193,12 +189,7 @@ void VkRenderer::_populateDebugMessengerCreateInfo(vk::DebugUtilsMessengerCreate
 
 void VkRenderer::_createSurface(const Window& window)
 {
-    VkSurfaceKHR rawSurface;
-    if (window.vkCreateSurface(mInstance.get(), nullptr, &rawSurface) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create window surface.");
-    }
-
-    mSurface = vk::SurfaceKHR(rawSurface);
+    mSurface.emplace(mInstance.get(), window);
 }
 
 void VkRenderer::_createRenderpass()
