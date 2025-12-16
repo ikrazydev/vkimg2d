@@ -50,17 +50,7 @@ const vk::SurfaceKHR VkRenderer::getSurface() const
 
 void VkRenderer::draw()
 {
-    ImGui_ImplVulkan_NewFrame();
-    ImGui_ImplGlfw_NewFrame();
-    ImGui::NewFrame();
-
-    auto& io = ImGui::GetIO();
-
-    ImGui::Begin("Debug Info");
-    ImGui::Text("Framerate: %.0f FPS", io.Framerate);
-    ImGui::End();
-
-    ImGui::ShowDemoWindow();
+    mImGuiRenderer->draw();
 
     const auto& device = mDevice.value();
     const auto& swapchain = device.getSwapchain();
@@ -135,7 +125,7 @@ void VkRenderer::_createInstance(const VkRendererConfig& config)
     appInfo.setApplicationVersion(VK_MAKE_VERSION(0, 1, 0));
     appInfo.setPEngineName("Custom");
     appInfo.setEngineVersion(VK_MAKE_VERSION(1, 0, 0));
-    appInfo.setApiVersion(VK_API_VERSION_1_3);
+    appInfo.setApiVersion(VK_API_VERSION_1_4);
 
     vk::InstanceCreateInfo createInfo{};
     createInfo.setPApplicationInfo(&appInfo);
@@ -343,6 +333,8 @@ void VkRenderer::_setupImGui(const VkRendererConfig& config)
     initInfo.CheckVkResultFn = nullptr;
 
     ImGui_ImplVulkan_Init(&initInfo);
+
+    mImGuiRenderer.emplace();
 }
 
 void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)

@@ -29,8 +29,10 @@ set(IMGUI_DIR external/imgui)
 
 add_executable(${PROJECT_NAME}
     src/main.cpp
-    src/app_new.cpp
+    src/app.cpp
     src/window.cpp
+
+    src/imgui_renderer.cpp
 
     src/vulkan/device.cpp
     src/vulkan/glfw_surface.cpp

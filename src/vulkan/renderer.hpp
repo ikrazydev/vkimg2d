@@ -20,6 +20,7 @@
 #include <vulkan/pipeline/graphics_pipeline.hpp>
 #include <vulkan/sync/fence.hpp>
 #include <vulkan/sync/semaphore.hpp>
+#include <imgui_renderer.hpp>
 #include <window.hpp>
 
 struct VkRendererConfig
@@ -93,6 +94,8 @@ private:
     std::optional<DescriptorLayout> mDescriptorLayout;
     std::optional<DescriptorPool> mDescriptorPool;
     std::optional<DescriptorSet> mDescriptorSet;
+
+    std::optional<ImGuiRenderer> mImGuiRenderer;
 
     std::optional<CommandBuffer> mCommandBuffers;
 

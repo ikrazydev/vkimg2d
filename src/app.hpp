@@ -1,236 +1,24 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
+#include <window.hpp>
+#include <vulkan/renderer.hpp>
 
-#include <array>
 #include <optional>
-#include <vector>
 
-#include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
-#include <backends/imgui_impl_vulkan.h>
-
-#define GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-#include <glm/glm.hpp>
-
-const uint32_t WIDTH = 800;
-const uint32_t HEIGHT = 600;
-
-const std::vector<const char*> sValidationLayers = {
-    "VK_LAYER_KHRONOS_validation",
-};
-
-const std::vector<const char*> sDeviceExtensions = {
-    "VK_KHR_portability_subset",
-    VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-};
-
-#if DEBUG
-    const bool sEnableValidationLayers  = true;
-#else
-    const bool sEnableValidationLayers = false;
-#endif
-
-const int MAX_FRAMES_IN_FLIGHT = 2;
-
-struct QueueFamilyIndices {
-    std::optional<uint32_t> graphicsFamily;
-    std::optional<uint32_t> presentFamily;
-
-    bool isComplete() {
-        return graphicsFamily.has_value() && presentFamily.has_value();
-    }
-};
-
-struct SwapchainSupportDetails {
-    VkSurfaceCapabilitiesKHR capabilities;
-    std::vector<VkSurfaceFormatKHR> formats;
-    std::vector<VkPresentModeKHR> presentModes;
-};
-
-struct Vertex {
-    glm::vec2 pos;
-    glm::vec3 color;
-    glm::vec2 texCoord;
-
-    static auto getBindingDescription() {
-        VkVertexInputBindingDescription bindingDescription{};
-        bindingDescription.binding = 0;
-        bindingDescription.stride = sizeof(Vertex);
-        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-        return bindingDescription;
-    }
-
-    static auto getAttributeDescriptions() {
-        std::array<VkVertexInputAttributeDescription, 3> attributeDescriptions{};
-
-        attributeDescriptions[0].binding = 0;
-        attributeDescriptions[0].location = 0;
-        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[0].offset = offsetof(Vertex, pos);
-
-        attributeDescriptions[1].binding = 0;
-        attributeDescriptions[1].location = 1;
-        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-        attributeDescriptions[1].offset = offsetof(Vertex, color);
-
-        attributeDescriptions[2].binding = 0;
-        attributeDescriptions[2].location = 2;
-        attributeDescriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-        attributeDescriptions[2].offset = offsetof(Vertex, texCoord);
-
-        return attributeDescriptions;
-    }
-};
-
-const std::vector<Vertex> sVertices = {
-    {{ -1.0f, -1.0f }, { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f }},
-    {{ 1.0f, -1.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f }},
-    {{ 1.0f, 1.0f }, { 0.0f, 0.0f, 1.0f }, { 1.0f, 1.0f }},
-    {{ -1.0f, 1.0f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f }},
-};
-
-const std::vector<uint32_t> sIndices = {
-    0, 1, 2, 2, 3, 0,
-};
-
-class VkImg2DApp {
+class App
+{
 public:
+    App();
+
     void run();
-
-    void initWindow();
-    static void framebufferResizeCallback(GLFWwindow* window, int width, int height);
-
-    void initVulkan();
-    void createInstance();
-    static void printExtensions();
-
-    void setupDebugMessenger();
-    static void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& createInfo);
-    static bool verifyValidationLayerSupport();
-    static VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(
-        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-        void* pUserData
-    );
-
-    void pickPhysicalDevice();
-    QueueFamilyIndices findDeviceFamilies(VkPhysicalDevice device);
-    bool verifyDeviceExtensionSupport(VkPhysicalDevice device);
-    uint32_t getDeviceScore(VkPhysicalDevice device);
-    void createLogicalDevice();
-
-    void createSurface();
-
-    SwapchainSupportDetails querySwapchainSupport(VkPhysicalDevice device);
-    VkSurfaceFormatKHR chooseSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& formats);
-    VkPresentModeKHR choosePresentMode(const std::vector<VkPresentModeKHR>& presentModes);
-    VkExtent2D chooseExtent2D(const VkSurfaceCapabilitiesKHR& capabilities);
-    void createSwapchain();
-    void createSwapchainImageViews();
-
-    void createRenderPass(VkDevice device, VkFormat format, VkRenderPass* pRenderPass);
-    void createMainRenderPass();
-    void createImGuiRenderPass();
-
-    static std::vector<char> readFile(const std::string& filename);
-    VkShaderModule createShaderModule(const std::vector<char>& bytecode);
-    void createDescriptorLayout();
-    void createDescriptorPool();
-    void createDescriptorSets();
-    void createGraphicsPipeline();
-    void createFramebuffers();
-
-    uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-
-    void createCommandPool();
-    void createTextureImage();
-    void copyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-    void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout);
-    void createTextureImageView();
-    void createTextureSampler();
-
-    void setupImGui();
-    
-    void createBuffer(
-        VkDeviceSize size,
-        VkBufferUsageFlags usage,
-        VkMemoryPropertyFlags properties,
-        VkBuffer& buffer,
-        VkDeviceMemory& memory
-    );
-    void createVertexBuffer();
-    void createIndexBuffer();
-    VkCommandBuffer beginSingleTimeCommands();
-    void endSingleTimeCommands(VkCommandBuffer commandBuffer);
-    void copyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
-    
-    void createCommandBuffers();
-    void recordCommandBuffers(VkCommandBuffer commandBuffer, VkCommandBuffer imGuiCommandBuffer, uint32_t imageIndex);
-
-    void createSyncObjects();
-    void createSwapchainImageSemaphores();
-    void drawFrame();
-
-    void cleanupSwapchain();
-    void recreateSwapchain();
-    
-    void mainLoop();
-
-    void cleanup();
 private:
-    GLFWwindow* mWindow;
+    void _createWindow();
 
-    VkInstance mInstance;
-    VkDebugUtilsMessengerEXT mDebugMessenger;
+    std::vector<const char*> _getExtensionNames() const;
+    void _initVulkan();
 
-    VkSurfaceKHR mSurface;
-    VkSurfaceFormatKHR mSurfaceFormat;
+    void _loop();
 
-    VkPhysicalDevice mPhysicalDevice;
-    VkDevice mDevice;
-
-    VkSwapchainKHR mSwapchain;
-    std::vector<VkImage> mSwapchainImages;
-    std::vector<VkImageView> mSwapchainImageViews;
-    std::vector<VkFramebuffer> mSwapchainFramebuffers;
-    VkFormat mSwapchainFormat;
-    VkExtent2D mSwapchainExtent;
-
-    VkRenderPass mRenderPass;
-    VkDescriptorSetLayout mDescriptorSetLayout;
-    VkDescriptorPool mDescriptorPool;
-    std::vector<VkDescriptorSet> mDescriptorSets;
-    VkPipelineLayout mPipelineLayout;
-    VkPipeline mPipeline;
-
-    VkQueue mGraphicsQueue;
-    VkQueue mPresentQueue;
-
-    VkCommandPool mCommandPool;
-    std::vector<VkCommandBuffer> mCommandBuffers;
-
-    std::vector<VkSemaphore> mImageAvailableSemaphores;
-    std::vector<VkSemaphore> mRenderedPerImageSemaphores;
-    std::vector<VkFence> mInFlightFences;
-    uint32_t mCurrentFrame = 0;
-    bool mFramebufferResized = false;
-
-    VkBuffer mVertexBuffer;
-    VkDeviceMemory mVertexBufferMemory;
-    VkBuffer mIndexBuffer;
-    VkDeviceMemory mIndexBufferMemory;
-
-    VkImage mTextureImage;
-    VkDeviceMemory mTextureImageMemory;
-    VkImageView mTextureImageView;
-    VkSampler mTextureSampler;
-
-    VkRenderPass mImGuiRenderPass;
-    std::vector<VkCommandBuffer> mImGuiCommandBuffers;
+    Window mWindow;
+    std::optional<VkRenderer> mVkRenderer;
 };
