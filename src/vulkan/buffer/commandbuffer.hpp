@@ -31,6 +31,11 @@ struct CommandBufferConfig
     uint32_t drawInstanceCount;
 };
 
+struct CommandBufferImGuiRecordConfig
+{
+
+};
+
 class CommandBuffer
 {
 public:
@@ -38,6 +43,8 @@ public:
 
     void record(uint32_t currentFrame, uint32_t imageIndex);
     void reset(uint32_t bufferIndex);
+
+    void recordImGui(uint32_t currentFrame, uint32_t imageIndex);
 
     [[nodiscard]] const vk::CommandBuffer getVkHandle(size_t bufferIndex) const noexcept;
 private:

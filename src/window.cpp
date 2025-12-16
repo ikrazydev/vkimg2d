@@ -52,6 +52,11 @@ void Window::update()
     glfwPollEvents();
 }
 
+GLFWwindow *Window::getGLFWHandle() const
+{
+    return mWindow;
+}
+
 void Window::_framebufferResizeCallback(GLFWwindow* window, int, int) 
 {
     auto win = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));

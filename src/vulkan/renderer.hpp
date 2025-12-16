@@ -65,6 +65,7 @@ private:
     void _createTexture(const VkRendererConfig& config);
     void _createDescriptors(const VkRendererConfig& config);
     void _createGraphicsPipeline();
+    void _setupImGui(const VkRendererConfig& config);
     void _createCommandBuffers(const VkRendererConfig& config);
     void _createSyncObjects(const VkRendererConfig& config);
 
@@ -73,7 +74,10 @@ private:
     std::optional<GLFWVkSurface> mSurface;
 
     std::optional<Device> mDevice;
+
     std::optional<Renderpass> mRenderpass;
+    std::optional<Renderpass> mImGuiRenderpass;
+
     std::vector<Framebuffer> mFramebuffers;
 
     uint32_t mCurrentFrame;
@@ -92,6 +96,7 @@ private:
     std::optional<DescriptorSet> mDescriptorSet;
 
     std::optional<CommandBuffer> mCommandBuffers;
+    std::optional<CommandBuffer> mImGuiCommandBuffers;
 
     std::optional<GraphicsPipeline> mPipeline;
 

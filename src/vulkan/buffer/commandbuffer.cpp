@@ -5,6 +5,10 @@
 #include <vulkan/buffer/buffer.hpp>
 #include <vulkan/buffer/framebuffer.hpp>
 
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_vulkan.h>
+
 std::vector<vk::UniqueCommandBuffer> createCommandBuffers(const vk::Device device, const vk::CommandPool pool, uint32_t createCount)
 {
     vk::CommandBufferAllocateInfo allocateInfo{};
@@ -71,7 +75,6 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     buffer->drawIndexed(mConfig.drawIndexCount, mConfig.drawInstanceCount, 0U, 0U, 0U);
 
     buffer->endRenderPass();
-
     buffer->end();
 }
 
@@ -79,6 +82,37 @@ void CommandBuffer::reset(uint32_t bufferIndex)
 {
     const auto& buffer = mCommandBuffers[bufferIndex];
     buffer->reset();
+}
+
+void CommandBuffer::recordImGui(uint32_t currentFrame, uint32_t imageIndex)
+{
+    const auto& buffer = mCommandBuffers[currentFrame];
+    
+    vk::CommandBufferBeginInfo beginInfo{};
+    beginInfo.setFlags(vk::CommandBufferUsageFlags{});
+    beginInfo.setPInheritanceInfo(VK_NULL_HANDLE);
+
+    buffer->begin(beginInfo);
+
+    vk::RenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.setRenderPass(mConfig.renderpass.getVkHandle());
+    renderPassInfo.setFramebuffer(mConfig.framebuffers[imageIndex].getVkHandle());
+    renderPassInfo.renderArea.setOffset({ 0u, 0u });
+    renderPassInfo.renderArea.setExtent(mConfig.extent);
+
+    buffer->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+
+    ImGui::Render();
+    auto* imGuiData = ImGui::GetDrawData();
+    ImGui_ImplVulkan_RenderDrawData(imGuiData, buffer.get());
+
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
+
+    buffer->endRenderPass();
+    buffer->end();
 }
 
 const vk::CommandBuffer CommandBuffer::getVkHandle(size_t bufferIndex) const noexcept

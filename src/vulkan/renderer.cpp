@@ -5,6 +5,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb_image.h>
 
+#include <imgui.h>
+#include <backends/imgui_impl_glfw.h>
+#include <backends/imgui_impl_vulkan.h>
+
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE;
 
 VkRenderer::VkRenderer(VkRendererConfig config)
@@ -29,6 +33,7 @@ VkRenderer::VkRenderer(VkRendererConfig config)
     _createTexture(config);
     _createDescriptors(config);
     _createGraphicsPipeline();
+    _setupImGui(config);
     _createCommandBuffers(config);
     _createSyncObjects(config);
 }
@@ -45,6 +50,18 @@ const vk::SurfaceKHR VkRenderer::getSurface() const
 
 void VkRenderer::draw()
 {
+    ImGui_ImplVulkan_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    auto& io = ImGui::GetIO();
+
+    ImGui::Begin("Debug Info");
+    ImGui::Text("Framerate: %.0f FPS", io.Framerate);
+    ImGui::End();
+
+    ImGui::ShowDemoWindow();
+
     const auto& device = mDevice.value();
     const auto& swapchain = device.getSwapchain();
 
@@ -68,8 +85,10 @@ void VkRenderer::draw()
 
     inFlightFence.reset();
 
-    mCommandBuffers.value().reset(mCurrentFrame);
-    mCommandBuffers.value().record(mCurrentFrame, imageIndex);
+    mCommandBuffers->reset(mCurrentFrame);
+    mCommandBuffers->record(mCurrentFrame, imageIndex);
+    mImGuiCommandBuffers->reset(mCurrentFrame);
+    mImGuiCommandBuffers->recordImGui(mCurrentFrame, imageIndex);
 
     vk::SubmitInfo submitInfo{};
     vk::PipelineStageFlags waitMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
@@ -200,6 +219,13 @@ void VkRenderer::_createRenderpass()
     };
 
     mRenderpass.emplace(mDevice.value(), config);
+
+    RenderpassConfig imGuiConfig = {
+        .format = vk::Format::eB8G8R8A8Unorm,
+        .colorLoadOp = vk::AttachmentLoadOp::eClear,
+    };
+
+    mImGuiRenderpass.emplace(mDevice.value(), imGuiConfig);
 }
 
 void VkRenderer::_createFramebuffers()
@@ -256,7 +282,7 @@ void VkRenderer::_createDescriptors(const VkRendererConfig& config)
     DescriptorPoolConfig poolConfig = {
         .type = vk::DescriptorType::eCombinedImageSampler,
         .count = static_cast<uint32_t>(config.framesInFlight),
-        .maxSets = static_cast<uint32_t>(config.framesInFlight),
+        .maxSets = static_cast<uint32_t>(config.framesInFlight) + IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE,
     };
 
     mDescriptorPool.emplace(mDevice.value(), poolConfig);
@@ -291,6 +317,43 @@ void VkRenderer::_createGraphicsPipeline()
     mPipeline.emplace(mDevice.value(), config);
 }
 
+void VkRenderer::_setupImGui(const VkRendererConfig& config)
+{
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+
+    auto& io = ImGui::GetIO();
+    io.Fonts->AddFontDefault();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+
+    ImGui::StyleColorsDark();
+
+    ImGui_ImplGlfw_InitForVulkan(config.window.getGLFWHandle(), true);
+
+    auto families = mDevice->getQueueFamilies();
+
+    ImGui_ImplVulkan_InitInfo initInfo{};
+    initInfo.ApiVersion = VK_API_VERSION_1_4;
+    initInfo.Instance = mInstance.get();
+    initInfo.PhysicalDevice = mDevice->getPhysicalDevice(),
+    initInfo.Device = mDevice->getVkHandle();
+    initInfo.QueueFamily = families.graphicsFamily.value();
+    initInfo.Queue = mDevice->getGraphicsQueue();
+    initInfo.PipelineCache = nullptr;
+    initInfo.DescriptorPool = mDescriptorPool->getVkHandle();
+    initInfo.RenderPass = mImGuiRenderpass->getVkHandle();
+    initInfo.Subpass = 0U;
+    initInfo.MinImageCount = config.framesInFlight;
+    initInfo.ImageCount = mDevice->getSwapchain().getImageCount();
+    initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    initInfo.Allocator = nullptr;
+    initInfo.CheckVkResultFn = nullptr;
+
+    ImGui_ImplVulkan_Init(&initInfo);
+}
+
 void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)
 {
     CommandBufferConfig config = {
@@ -300,7 +363,7 @@ void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)
         .descriptorSet = mDescriptorSet.value(),
         .pipeline = mPipeline.value(),
 
-        .extent = mDevice.value().getSwapchain().getExtent(),
+        .extent = mDevice->getSwapchain().getExtent(),
 
         .createCount = rendererConfig.framesInFlight,
 
@@ -312,6 +375,26 @@ void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)
     };
 
     mCommandBuffers.emplace(mDevice.value(), config);
+
+    CommandBufferConfig imGuiConfig = {
+        .commandPool = mCommandPool.value(),
+        .renderpass = mImGuiRenderpass.value(),
+        .framebuffers = mFramebuffers,
+        .descriptorSet = mDescriptorSet.value(),
+        .pipeline = mPipeline.value(),
+
+        .extent = mDevice->getSwapchain().getExtent(),
+
+        .createCount = rendererConfig.framesInFlight,
+
+        .vertexBuffer = mVertexBuffer.value(),
+        .indexBuffer = mIndexBuffer.value(),
+
+        .drawIndexCount = static_cast<uint32_t>(rendererConfig.indices.size()),
+        .drawInstanceCount = 1U,
+    };
+
+    mImGuiCommandBuffers.emplace(mDevice.value(), imGuiConfig);
 }
 
 void VkRenderer::_createSyncObjects(const VkRendererConfig& config)

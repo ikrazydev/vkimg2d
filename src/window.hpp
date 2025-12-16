@@ -28,6 +28,8 @@ public:
 
     bool shouldClose() const;
     void update();
+
+    GLFWwindow* getGLFWHandle() const;
 private:
     static void _framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
