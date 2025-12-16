@@ -74,6 +74,8 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
 
     buffer->drawIndexed(mConfig.drawIndexCount, mConfig.drawInstanceCount, 0U, 0U, 0U);
 
+    recordImGui(currentFrame, imageIndex);
+
     buffer->endRenderPass();
     buffer->end();
 }
@@ -88,20 +90,6 @@ void CommandBuffer::recordImGui(uint32_t currentFrame, uint32_t imageIndex)
 {
     const auto& buffer = mCommandBuffers[currentFrame];
     
-    vk::CommandBufferBeginInfo beginInfo{};
-    beginInfo.setFlags(vk::CommandBufferUsageFlags{});
-    beginInfo.setPInheritanceInfo(VK_NULL_HANDLE);
-
-    buffer->begin(beginInfo);
-
-    vk::RenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.setRenderPass(mConfig.renderpass.getVkHandle());
-    renderPassInfo.setFramebuffer(mConfig.framebuffers[imageIndex].getVkHandle());
-    renderPassInfo.renderArea.setOffset({ 0u, 0u });
-    renderPassInfo.renderArea.setExtent(mConfig.extent);
-
-    buffer->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
-
     ImGui::Render();
     auto* imGuiData = ImGui::GetDrawData();
     ImGui_ImplVulkan_RenderDrawData(imGuiData, buffer.get());
@@ -110,9 +98,6 @@ void CommandBuffer::recordImGui(uint32_t currentFrame, uint32_t imageIndex)
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
     }
-
-    buffer->endRenderPass();
-    buffer->end();
 }
 
 const vk::CommandBuffer CommandBuffer::getVkHandle(size_t bufferIndex) const noexcept

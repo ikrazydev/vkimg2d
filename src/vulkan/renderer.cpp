@@ -87,8 +87,6 @@ void VkRenderer::draw()
 
     mCommandBuffers->reset(mCurrentFrame);
     mCommandBuffers->record(mCurrentFrame, imageIndex);
-    mImGuiCommandBuffers->reset(mCurrentFrame);
-    mImGuiCommandBuffers->recordImGui(mCurrentFrame, imageIndex);
 
     vk::SubmitInfo submitInfo{};
     vk::PipelineStageFlags waitMask = vk::PipelineStageFlagBits::eColorAttachmentOutput;
@@ -219,13 +217,6 @@ void VkRenderer::_createRenderpass()
     };
 
     mRenderpass.emplace(mDevice.value(), config);
-
-    RenderpassConfig imGuiConfig = {
-        .format = vk::Format::eB8G8R8A8Unorm,
-        .colorLoadOp = vk::AttachmentLoadOp::eClear,
-    };
-
-    mImGuiRenderpass.emplace(mDevice.value(), imGuiConfig);
 }
 
 void VkRenderer::_createFramebuffers()
@@ -343,7 +334,7 @@ void VkRenderer::_setupImGui(const VkRendererConfig& config)
     initInfo.Queue = mDevice->getGraphicsQueue();
     initInfo.PipelineCache = nullptr;
     initInfo.DescriptorPool = mDescriptorPool->getVkHandle();
-    initInfo.RenderPass = mImGuiRenderpass->getVkHandle();
+    initInfo.RenderPass = mRenderpass->getVkHandle();
     initInfo.Subpass = 0U;
     initInfo.MinImageCount = config.framesInFlight;
     initInfo.ImageCount = mDevice->getSwapchain().getImageCount();
@@ -375,26 +366,6 @@ void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)
     };
 
     mCommandBuffers.emplace(mDevice.value(), config);
-
-    CommandBufferConfig imGuiConfig = {
-        .commandPool = mCommandPool.value(),
-        .renderpass = mImGuiRenderpass.value(),
-        .framebuffers = mFramebuffers,
-        .descriptorSet = mDescriptorSet.value(),
-        .pipeline = mPipeline.value(),
-
-        .extent = mDevice->getSwapchain().getExtent(),
-
-        .createCount = rendererConfig.framesInFlight,
-
-        .vertexBuffer = mVertexBuffer.value(),
-        .indexBuffer = mIndexBuffer.value(),
-
-        .drawIndexCount = static_cast<uint32_t>(rendererConfig.indices.size()),
-        .drawInstanceCount = 1U,
-    };
-
-    mImGuiCommandBuffers.emplace(mDevice.value(), imGuiConfig);
 }
 
 void VkRenderer::_createSyncObjects(const VkRendererConfig& config)

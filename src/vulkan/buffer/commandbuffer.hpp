@@ -31,11 +31,6 @@ struct CommandBufferConfig
     uint32_t drawInstanceCount;
 };
 
-struct CommandBufferImGuiRecordConfig
-{
-
-};
-
 class CommandBuffer
 {
 public:

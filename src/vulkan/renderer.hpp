@@ -76,7 +76,6 @@ private:
     std::optional<Device> mDevice;
 
     std::optional<Renderpass> mRenderpass;
-    std::optional<Renderpass> mImGuiRenderpass;
 
     std::vector<Framebuffer> mFramebuffers;
 
@@ -96,7 +95,6 @@ private:
     std::optional<DescriptorSet> mDescriptorSet;
 
     std::optional<CommandBuffer> mCommandBuffers;
-    std::optional<CommandBuffer> mImGuiCommandBuffers;
 
     std::optional<GraphicsPipeline> mPipeline;
 
