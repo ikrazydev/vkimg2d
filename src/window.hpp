@@ -25,6 +25,7 @@ public:
     VkResult vkCreateSurface(VkInstance instance, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface) const;
 
     void getFramebufferSize(uint32_t* width, uint32_t* height) const;
+    void getScaling(float* xScale, float* yScale) const;
 
     bool shouldClose() const;
     void update();

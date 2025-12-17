@@ -308,6 +308,15 @@ void VkRenderer::_setupImGui(const VkRendererConfig& config)
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
+    float xscale, yscale;
+    uint32_t width, height;
+    config.window.getScaling(&xscale, &yscale);
+    config.window.getFramebufferSize(&width, &height);
+
+    io.DisplayFramebufferScale = ImVec2{ xscale, yscale };
+    io.DisplaySize = ImVec2{ (float)width, (float)height };
+    io.FontGlobalScale = yscale;
+
     ImGui::StyleColorsDark();
 
     ImGui_ImplGlfw_InitForVulkan(config.window.getGLFWHandle(), true);

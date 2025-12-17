@@ -7,6 +7,7 @@ Window::Window(WindowConfig config) : mWindow(nullptr)
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+    glfwWindowHint(GLFW_SCALE_TO_MONITOR, GLFW_TRUE);
 }
 
 Window::~Window()
@@ -40,6 +41,15 @@ void Window::getFramebufferSize(uint32_t* width, uint32_t* height) const
 
     *width = static_cast<uint32_t>(w);
     *height = static_cast<uint32_t>(h);
+}
+
+void Window::getScaling(float* xScale, float* yScale) const
+{
+    float x, y;
+    glfwGetWindowContentScale(mWindow, &x, &y);
+
+    *xScale = x;
+    *yScale = y;
 }
 
 bool Window::shouldClose() const
