@@ -3,5 +3,5 @@
 	url = https://github.com/nothings/stb.git
 [submodule "external/imgui"]
 	path = external/imgui
-	url = https://github.com/ocornut/imgui
+	url = https://github.com/ikrazydev/imgui-vkimg2d
 	branch = docking
