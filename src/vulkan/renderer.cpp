@@ -323,13 +323,17 @@ void VkRenderer::_setupImGui(const VkRendererConfig& config)
     initInfo.Queue = mDevice->getGraphicsQueue();
     initInfo.PipelineCache = nullptr;
     initInfo.DescriptorPool = mDescriptorPool->getVkHandle();
-    initInfo.RenderPass = mRenderpass->getVkHandle();
-    initInfo.Subpass = 0U;
     initInfo.MinImageCount = config.framesInFlight;
     initInfo.ImageCount = mDevice->getSwapchain().getImageCount();
-    initInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
     initInfo.Allocator = nullptr;
     initInfo.CheckVkResultFn = nullptr;
+
+    ImGui_ImplVulkan_PipelineInfo pipelineInfo{};
+    pipelineInfo.RenderPass = mRenderpass->getVkHandle();
+    pipelineInfo.Subpass = 0U;
+    pipelineInfo.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    
+    initInfo.PipelineInfoMain = pipelineInfo;
 
     ImGui_ImplVulkan_Init(&initInfo);
 
