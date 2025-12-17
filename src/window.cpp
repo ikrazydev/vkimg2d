@@ -34,13 +34,31 @@ VkResult Window::vkCreateSurface(VkInstance instance, const VkAllocationCallback
     return glfwCreateWindowSurface(instance, mWindow, allocator, surface);
 }
 
-void Window::getFramebufferSize(uint32_t* width, uint32_t* height) const
+void Window::getWindowSize(uint32_t *width, uint32_t *height) const
+{
+    int w, h;
+    glfwGetWindowSize(mWindow, &w, &h);
+
+    *width = static_cast<uint32_t>(w);
+    *height = static_cast<uint32_t>(h);
+}
+
+void Window::getFramebufferSize(uint32_t *width, uint32_t *height) const
 {
     int w, h;
     glfwGetFramebufferSize(mWindow, &w, &h);
 
     *width = static_cast<uint32_t>(w);
     *height = static_cast<uint32_t>(h);
+}
+
+void Window::getPointScaling(float *scale) const
+{
+    uint32_t fWidth, fHeight, wWidth, wHeight;
+    getFramebufferSize(&fWidth, &fHeight);
+    getWindowSize(&wWidth, &wHeight);
+
+    *scale = (float)fWidth / (float)wWidth;
 }
 
 void Window::getScaling(float* xScale, float* yScale) const

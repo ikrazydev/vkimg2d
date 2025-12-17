@@ -24,7 +24,9 @@ public:
     void vkGetRequiredExtensions(const char**& exts, uint32_t& extCount) const;
     VkResult vkCreateSurface(VkInstance instance, const VkAllocationCallbacks* allocator, VkSurfaceKHR* surface) const;
 
+    void getWindowSize(uint32_t* width, uint32_t* height) const;
     void getFramebufferSize(uint32_t* width, uint32_t* height) const;
+    void getPointScaling(float* scale) const;
     void getScaling(float* xScale, float* yScale) const;
 
     bool shouldClose() const;

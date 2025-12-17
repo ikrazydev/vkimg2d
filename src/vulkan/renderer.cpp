@@ -308,14 +308,15 @@ void VkRenderer::_setupImGui(const VkRendererConfig& config)
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-    float xscale, yscale;
+    float xscale, yscale, pointscale;
     uint32_t width, height;
     config.window.getScaling(&xscale, &yscale);
+    config.window.getPointScaling(&pointscale);
     config.window.getFramebufferSize(&width, &height);
 
     io.DisplayFramebufferScale = ImVec2{ xscale, yscale };
     io.DisplaySize = ImVec2{ (float)width, (float)height };
-    io.FontGlobalScale = yscale;
+    io.FontGlobalScale = yscale / pointscale;
 
     ImGui::StyleColorsDark();
 
