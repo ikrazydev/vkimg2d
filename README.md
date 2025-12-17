@@ -17,13 +17,13 @@ A cross-platform Vulkan application for image manipulation designed to work on W
 - Download from [LunarG Vulkan SDK](https://vulkan.lunarg.com/sdk/home#mac)
 - Required frameworks: Cocoa, IOKit, CoreVideo, QuartzCore, Metal
 
-#### Linux
-- Install Vulkan drivers for your GPU
-- X11 development libraries required
-
 #### Windows
 - Vulkan SDK includes necessary libraries
 - GLFW and GLM can be installed via vcpkg or built from source
+
+#### Linux
+- Install Vulkan drivers for your GPU
+- X11 development libraries required
 
 ## Building
 
@@ -42,7 +42,7 @@ make
 Using CMake extension, you can open the project as a folder.
 That is enough to compile and run the application.
 
-### Using Package Managers (Recommended)
+### Using Package Managers
 
 #### Homebrew
 ```bash
@@ -63,6 +63,7 @@ export VK_LAYER_PATH=$VULKAN_SDK/etc/vulkan/explicit_layer.d
 # Build
 mkdir build && cd build
 cmake ..
+cmake --build .
 make
 ```
 
