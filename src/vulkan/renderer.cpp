@@ -52,18 +52,17 @@ void VkRenderer::draw()
 {
     mImGuiRenderer->draw();
 
-    const auto& device = mDevice.value();
-    const auto& swapchain = device.getSwapchain();
+    const auto& swapchain = mDevice->getSwapchain();
 
-    const auto& inFlightFence = mInFlightFences.value().getFence(mCurrentFrame);
-    const auto& imageAvailableSemaphore = mImageAvailableSemaphores.value().getVkHandle(mCurrentFrame);
+    const auto& inFlightFence = mInFlightFences->getFence(mCurrentFrame);
+    const auto& imageAvailableSemaphore = mImageAvailableSemaphores->getVkHandle(mCurrentFrame);
 
     inFlightFence.wait();
     inFlightFence.reset();
 
-    uint32_t imageIndex = device.acquireNextImageKHR(imageAvailableSemaphore);
+    uint32_t imageIndex = mDevice->acquireNextImageKHR(imageAvailableSemaphore);
 
-    const auto& renderedPerImageSemaphore = mRenderedPerImageSemaphores.value().getVkHandle(imageIndex);
+    const auto& renderedPerImageSemaphore = mRenderedPerImageSemaphores->getVkHandle(imageIndex);
 
     /*if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         recreateSwapchain();
@@ -83,13 +82,13 @@ void VkRenderer::draw()
     submitInfo.setWaitSemaphores(imageAvailableSemaphore);
     submitInfo.setWaitDstStageMask({ waitMask });
 
-    const auto commandBuffer = mCommandBuffers.value().getVkHandle(mCurrentFrame);
+    const auto commandBuffer = mCommandBuffers->getVkHandle(mCurrentFrame);
     submitInfo.setCommandBuffers(commandBuffer);
 
     vk::Semaphore signalSemaphores[] = { renderedPerImageSemaphore };
     submitInfo.setSignalSemaphores(signalSemaphores);
 
-    device.getGraphicsQueue().submit(submitInfo, inFlightFence.getVkHandle());
+    mDevice->getGraphicsQueue().submit(submitInfo, inFlightFence.getVkHandle());
 
     vk::PresentInfoKHR presentInfo{};
     presentInfo.setWaitSemaphores(signalSemaphores);
@@ -100,7 +99,7 @@ void VkRenderer::draw()
 
     presentInfo.setPResults(nullptr);
 
-    auto result = device.getPresentQueue().presentKHR(presentInfo);
+    auto result = mDevice->getPresentQueue().presentKHR(presentInfo);
 
     /*if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mFramebufferResized) {
         mFramebufferResized = false;
