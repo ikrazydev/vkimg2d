@@ -125,3 +125,31 @@ message(STATUS "Vulkan found: ${Vulkan_FOUND}")
 message(STATUS "Vulkan include dirs: ${Vulkan_INCLUDE_DIRS}")
 message(STATUS "Vulkan libraries: ${Vulkan_LIBRARIES}")
 message(STATUS "GLFW found: ${glfw3_FOUND}")
+
+# Shaders
+if(WIN32)
+    set(COMPILE_SHADERS_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/compile_shaders.bat")
+else()
+    set(COMPILE_SHADERS_SCRIPT "${CMAKE_SOURCE_DIR}/scripts/compile_shaders.sh")
+endif()
+
+add_custom_target(shaders
+    COMMAND ${COMPILE_SHADERS_SCRIPT}
+    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}/scripts"
+    COMMENT "Compiling shaders"
+)
+
+add_dependencies(${PROJECT_NAME} shaders)
+
+# Resource copy
+add_custom_target(copy_assets ALL
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/shaders"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders"
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${CMAKE_SOURCE_DIR}/samples"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/samples"
+    COMMENT "Copying assets"
+)
+
+add_dependencies(copy_assets ${PROJECT_NAME})

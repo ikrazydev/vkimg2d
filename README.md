@@ -1,6 +1,6 @@
 # VkImg2D
 
-A cross-platform Vulkan application for image manipulation. This application is designed to work on Windows, macOS (via MoltenVK), and Linux.
+A cross-platform Vulkan application for image manipulation designed to work on Windows, macOS (via MoltenVK), and Linux.
 
 ## Dependencies
 
@@ -27,18 +27,24 @@ A cross-platform Vulkan application for image manipulation. This application is 
 
 ## Building
 
-### Quick Setup (macOS)
+### CLI Setup
 ```bash
 # This will install dependencies and configure environment variables
 # Then build the project
 mkdir build && cd build
 cmake ..
+cmake --build .
 make
 ```
 
+### Visual Studio
+
+Using CMake extension, you can open the project as a folder.
+That is enough to compile and run the application.
+
 ### Using Package Managers (Recommended)
 
-#### macOS with Homebrew + Manual SDK
+#### Homebrew
 ```bash
 # Install available dependencies via Homebrew
 brew install glfw glm cmake
@@ -58,14 +64,6 @@ export VK_LAYER_PATH=$VULKAN_SDK/etc/vulkan/explicit_layer.d
 mkdir build && cd build
 cmake ..
 make
-```
-
-### Manual Build
-```bash
-# Ensure Vulkan SDK, GLFW, and GLM are installed and in your PATH/CMAKE_PREFIX_PATH
-mkdir build && cd build
-cmake ..
-cmake --build .
 ```
 
 ### Environment Variables
