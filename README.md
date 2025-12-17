@@ -12,14 +12,14 @@ A cross-platform Vulkan application for image manipulation designed to work on W
 
 ### Platform-specific Notes
 
+#### Windows
+- Vulkan SDK includes necessary libraries
+- GLFW and GLM can be installed via vcpkg or built from source
+
 #### macOS
 - **MoltenVK** is required (Vulkan SDK for macOS includes it)
 - Download from [LunarG Vulkan SDK](https://vulkan.lunarg.com/sdk/home#mac)
 - Required frameworks: Cocoa, IOKit, CoreVideo, QuartzCore, Metal
-
-#### Windows
-- Vulkan SDK includes necessary libraries
-- GLFW and GLM can be installed via vcpkg or built from source
 
 #### Linux
 - Install Vulkan drivers for your GPU
