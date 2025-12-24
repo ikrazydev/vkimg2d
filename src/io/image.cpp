@@ -1,5 +1,8 @@
 #include "image.hpp"
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 Image::Image(const std::string_view path)
     : mPath{ path }
 {

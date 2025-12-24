@@ -16,7 +16,7 @@ struct CommandBufferConfig
 {
     const CommandPool& commandPool;
     const Renderpass& renderpass;
-    const std::vector<Framebuffer>& framebuffers;
+    const std::vector<Framebuffer>* framebuffers;
     const DescriptorSet& descriptorSet;
     const GraphicsPipeline& pipeline;
     
@@ -34,16 +34,19 @@ struct CommandBufferConfig
 class CommandBuffer
 {
 public:
-    CommandBuffer(const Device& device, CommandBufferConfig config);
+    CommandBuffer(const Device& device, const CommandBufferConfig& config);
 
     void record(uint32_t currentFrame, uint32_t imageIndex);
     void reset(uint32_t bufferIndex);
 
     void recordImGui(uint32_t currentFrame, uint32_t imageIndex);
 
+    void updateFramebuffers(const std::vector<Framebuffer>* framebuffers, vk::Extent2D extent);
+
     [[nodiscard]] const vk::CommandBuffer getVkHandle(size_t bufferIndex) const noexcept;
 private:
     const Device& mDevice;
+
     CommandBufferConfig mConfig;
     
     std::vector<vk::UniqueCommandBuffer> mCommandBuffers;

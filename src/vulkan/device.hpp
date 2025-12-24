@@ -45,7 +45,9 @@ public:
     DeviceSwapchainDetails querySwapchainDetails() const;
 
     vk::UniqueSwapchainKHR createSwapchainKHR(const vk::SwapchainCreateInfoKHR info) const;
-    uint32_t acquireNextImageKHR(vk::Semaphore semaphore, uint64_t timeout = UINT64_MAX) const;
+    vk::ResultValue<uint32_t> acquireNextImageKHR(vk::Semaphore semaphore, uint64_t timeout = UINT64_MAX) const;
+
+    void recreateSwapchain();
 
     const Window& getWindow() const;
     const vk::PhysicalDevice getPhysicalDevice() const;

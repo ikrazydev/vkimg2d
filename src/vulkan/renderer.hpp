@@ -36,7 +36,7 @@ struct VkRendererConfig
 
     uint32_t framesInFlight;
     
-    const Window& window;
+    Window& window;
 };
 
 class VkRenderer
@@ -69,6 +69,10 @@ private:
     void _setupImGui(const VkRendererConfig& config);
     void _createCommandBuffers(const VkRendererConfig& config);
     void _createSyncObjects(const VkRendererConfig& config);
+
+    void _recreateSwapchain();
+
+    Window& mWindow;
 
     vk::UniqueInstance mInstance;
     vk::UniqueDebugUtilsMessengerEXT mDebugMessenger;

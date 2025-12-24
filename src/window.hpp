@@ -33,9 +33,10 @@ public:
     void update();
 
     GLFWwindow* getGLFWHandle() const;
+
+    bool mFramebufferResized = false;
 private:
     static void _framebufferResizeCallback(GLFWwindow* window, int width, int height);
 
     GLFWwindow* mWindow;
-    bool mFramebufferResized = false;
 };

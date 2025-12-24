@@ -1,6 +1,7 @@
 #include "device.hpp"
 
 #include <vulkan/renderer.hpp>
+#include <vulkan/swapchain.hpp>
 #include <window.hpp>
 
 #include <iostream>
@@ -13,8 +14,6 @@ Device::Device(const VkRendererConfig& config, VkRenderer& renderer)
     , mInstance{mRenderer.getInstance()}
     , mWindow{config.window}
 {
-    std::cout << "Hello there\n";
-
     mPhysicalDevice = _pickPhysicalDevice(config.deviceExtensions);
     mQueueFamilies = _findQueueFamilies(mPhysicalDevice);
 
@@ -23,12 +22,7 @@ Device::Device(const VkRendererConfig& config, VkRenderer& renderer)
     mGraphicsQueue = deviceCreationResult.graphicsQueue;
     mPresentQueue = deviceCreationResult.presentQueue;
 
-    DeviceSwapchainConfig swapchainConfig{
-        .preferredFormat = vk::Format::eB8G8R8A8Srgb,
-        .preferredColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear,
-    };
-
-    mSwapchain.emplace(*this, swapchainConfig);
+    recreateSwapchain();
 }
 
 vk::PhysicalDevice Device::_pickPhysicalDevice(const std::vector<const char*>& extensions)
@@ -256,7 +250,19 @@ vk::UniqueSwapchainKHR Device::createSwapchainKHR(const vk::SwapchainCreateInfoK
     return result;
 }
 
-uint32_t Device::acquireNextImageKHR(vk::Semaphore semaphore, uint64_t timeout) const
+vk::ResultValue<uint32_t> Device::acquireNextImageKHR(vk::Semaphore semaphore, uint64_t timeout) const
 {
-    return mDevice->acquireNextImageKHR(mSwapchain.value().getVkHandle(), timeout, semaphore).value;
+    return mDevice->acquireNextImageKHR(mSwapchain->getVkHandle(), timeout, semaphore);
+}
+
+void Device::recreateSwapchain()
+{
+    mSwapchain.reset();
+
+    DeviceSwapchainConfig swapchainConfig{
+        .preferredFormat = vk::Format::eB8G8R8A8Srgb,
+        .preferredColorSpace = vk::ColorSpaceKHR::eSrgbNonlinear,
+    };
+
+    mSwapchain.emplace(*this, swapchainConfig);
 }

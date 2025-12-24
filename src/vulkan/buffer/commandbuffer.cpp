@@ -19,7 +19,7 @@ std::vector<vk::UniqueCommandBuffer> createCommandBuffers(const vk::Device devic
     return device.allocateCommandBuffersUnique(allocateInfo);
 }
 
-CommandBuffer::CommandBuffer(const Device& device, CommandBufferConfig config)
+CommandBuffer::CommandBuffer(const Device& device, const CommandBufferConfig& config)
     : mDevice{ device }
     , mConfig{ config }
 {
@@ -32,13 +32,13 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     
     vk::CommandBufferBeginInfo beginInfo{};
     beginInfo.setFlags(vk::CommandBufferUsageFlags{});
-    beginInfo.setPInheritanceInfo(VK_NULL_HANDLE);
+    beginInfo.setPInheritanceInfo(nullptr);
 
     buffer->begin(beginInfo);
 
     vk::RenderPassBeginInfo renderPassInfo{};
     renderPassInfo.setRenderPass(mConfig.renderpass.getVkHandle());
-    renderPassInfo.setFramebuffer(mConfig.framebuffers[imageIndex].getVkHandle());
+    renderPassInfo.setFramebuffer((*mConfig.framebuffers)[imageIndex].getVkHandle());
     renderPassInfo.renderArea.setOffset({ 0u, 0u });
     renderPassInfo.renderArea.setExtent(mConfig.extent);
 
@@ -98,6 +98,12 @@ void CommandBuffer::recordImGui(uint32_t currentFrame, uint32_t imageIndex)
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
     }
+}
+
+void CommandBuffer::updateFramebuffers(const std::vector<Framebuffer>* framebuffers, vk::Extent2D extent)
+{
+    mConfig.framebuffers = framebuffers;
+    mConfig.extent = extent;
 }
 
 const vk::CommandBuffer CommandBuffer::getVkHandle(size_t bufferIndex) const noexcept

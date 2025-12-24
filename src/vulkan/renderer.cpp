@@ -1,9 +1,7 @@
 #include "renderer.hpp"
 
 #include <iostream>
-
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
+#include <stdexcept>
 
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -12,6 +10,7 @@
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE;
 
 VkRenderer::VkRenderer(VkRendererConfig config)
+    : mWindow{ config.window }
 {
     VULKAN_HPP_DEFAULT_DISPATCHER.init();
 
@@ -60,17 +59,19 @@ void VkRenderer::draw()
     inFlightFence.wait();
     inFlightFence.reset();
 
-    uint32_t imageIndex = mDevice->acquireNextImageKHR(imageAvailableSemaphore);
+    auto nextImageKHR = mDevice->acquireNextImageKHR(imageAvailableSemaphore);
 
-    const auto& renderedPerImageSemaphore = mRenderedPerImageSemaphores->getVkHandle(imageIndex);
-
-    /*if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-        recreateSwapchain();
+    if (nextImageKHR.result == vk::Result::eErrorOutOfDateKHR) {
+        _recreateSwapchain();
         return;
     }
-    else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+    else if (nextImageKHR.result != vk::Result::eSuccess && nextImageKHR.result != vk::Result::eSuboptimalKHR) {
         throw std::runtime_error("Failed to acquire swapchain image.");
-    }*/
+    }
+
+    uint32_t imageIndex = nextImageKHR.value;
+
+    const auto& renderedPerImageSemaphore = mRenderedPerImageSemaphores->getVkHandle(imageIndex);
 
     inFlightFence.reset();
 
@@ -101,13 +102,13 @@ void VkRenderer::draw()
 
     auto result = mDevice->getPresentQueue().presentKHR(presentInfo);
 
-    /*if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || mFramebufferResized) {
-        mFramebufferResized = false;
-        recreateSwapchain();
+    if (result == vk::Result::eErrorOutOfDateKHR || result == vk::Result::eSuboptimalKHR || mWindow.mFramebufferResized) {
+        mWindow.mFramebufferResized = false;
+        _recreateSwapchain();
     }
-    else if (result != VK_SUCCESS) {
+    else if (result != vk::Result::eSuccess) {
         throw std::runtime_error("Failed to present swapchain image.");
-    }*/
+    }
 
     mCurrentFrame = (mCurrentFrame + 1) % mFramesInFlight;
 }
@@ -201,7 +202,7 @@ void VkRenderer::_createSurface(const Window& window)
 void VkRenderer::_createRenderpass()
 {
     RenderpassConfig config = {
-        .format = mDevice.value().getSwapchain().getSurfaceFormat().format,
+        .format = mDevice->getSwapchain().getSurfaceFormat().format,
         .colorLoadOp = vk::AttachmentLoadOp::eClear,
     };
 
@@ -210,9 +211,10 @@ void VkRenderer::_createRenderpass()
 
 void VkRenderer::_createFramebuffers()
 {
-    const auto& swapchain = mDevice.value().getSwapchain();
+    const auto& swapchain = mDevice->getSwapchain();
     auto count = swapchain.getImageCount();
 
+    mFramebuffers.clear();
     mFramebuffers.reserve(count);
 
     for (size_t i = 0; i < count; i++) {
@@ -355,7 +357,7 @@ void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)
     CommandBufferConfig config = {
         .commandPool = mCommandPool.value(),
         .renderpass = mRenderpass.value(),
-        .framebuffers = mFramebuffers,
+        .framebuffers = &mFramebuffers,
         .descriptorSet = mDescriptorSet.value(),
         .pipeline = mPipeline.value(),
 
@@ -381,4 +383,14 @@ void VkRenderer::_createSyncObjects(const VkRendererConfig& config)
 
     mCurrentFrame = 0;
     mFramesInFlight = config.framesInFlight;
+}
+
+void VkRenderer::_recreateSwapchain()
+{
+    mDevice->getVkHandle().waitIdle();
+    mDevice->recreateSwapchain();
+
+    _createFramebuffers();
+
+    mCommandBuffers->updateFramebuffers(&mFramebuffers, mDevice->getSwapchain().getExtent());
 }
