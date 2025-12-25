@@ -11,6 +11,7 @@ enum class ShaderType
 {
     Vertex,
     Fragment,
+    Compute,
 };
 
 struct ShaderConfig

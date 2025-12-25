@@ -243,12 +243,23 @@ void VkRenderer::_createBuffers(const VkRendererConfig& config)
 
 void VkRenderer::_createTexture(const VkRendererConfig& config)
 {
+    // Original
     auto image = Image{ "samples/sculpture_statue.jpg" };
     auto loadedImage = image.load();
-    mTexture.emplace(mDevice.value(), mCommandPool.value(), loadedImage);
+
+    TextureImageConfig imageConfig = {
+        .commandPool = mCommandPool.value(),
+        .image = loadedImage,
+
+        .type = TextureImageType::Sampled,
+    };
+
+    mTexture.emplace(mDevice.value(), imageConfig);
 
     SamplerConfig samplerConfig = {};
     mSampler.emplace(mDevice.value(), samplerConfig);
+
+    // TODO: ping-pong images
 }
 
 void VkRenderer::_createDescriptors(const VkRendererConfig& config)

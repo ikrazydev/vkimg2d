@@ -40,6 +40,8 @@ vk::ShaderStageFlagBits Shader::_convertShaderType(const ShaderType& type)
         return vk::ShaderStageFlagBits::eVertex;
     case ShaderType::Fragment:
         return vk::ShaderStageFlagBits::eFragment;
+    default:
+        return vk::ShaderStageFlagBits::eCompute;
     }
 }
 

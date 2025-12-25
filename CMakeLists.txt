@@ -54,6 +54,7 @@ add_executable(${PROJECT_NAME}
     src/vulkan/descriptor/descriptor_set.cpp
 
     src/vulkan/pipeline/graphics_pipeline.cpp
+    src/vulkan/pipeline/compute_pipeline.cpp
 
     src/vulkan/sync/fence.cpp
     src/vulkan/sync/semaphore.cpp

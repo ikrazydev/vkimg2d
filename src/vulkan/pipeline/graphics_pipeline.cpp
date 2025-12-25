@@ -26,43 +26,41 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
     dynamicState.setDynamicStates(dynamicStates);
 
     vk::Viewport viewport{};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = (float)mConfig.swapchainExtent.width;
-    viewport.height = (float)mConfig.swapchainExtent.height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
+    viewport.setX(0.0f);
+    viewport.setY(0.0f);
+    viewport.setWidth((float)mConfig.swapchainExtent.width);
+    viewport.setHeight((float)mConfig.swapchainExtent.height);
+    viewport.setMinDepth(0.0f);
+    viewport.setMaxDepth(1.0f);
 
     vk::Rect2D scissor{};
-    scissor.offset = vk::Offset2D{ 0U, 0U };
-    scissor.extent = mConfig.swapchainExtent;
+    scissor.setOffset(vk::Offset2D{ 0U, 0U });
+    scissor.setExtent(mConfig.swapchainExtent);
 
     vk::PipelineViewportStateCreateInfo viewportState{};
-    viewportState.viewportCount = 1U;
-    viewportState.pViewports = &viewport;
-    viewportState.scissorCount = 1U;
-    viewportState.pScissors = &scissor;
+    viewportState.setViewports(viewport);
+    viewportState.setScissors(scissor);
 
     vk::PipelineRasterizationStateCreateInfo rasterizer{};
-    rasterizer.depthClampEnable = vk::False;
-    rasterizer.rasterizerDiscardEnable = vk::False;
-    rasterizer.polygonMode = vk::PolygonMode::eFill;
-    rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode = vk::CullModeFlagBits::eBack;
-    rasterizer.frontFace = vk::FrontFace::eClockwise;
+    rasterizer.setDepthClampEnable(vk::False);
+    rasterizer.setRasterizerDiscardEnable(vk::False);
+    rasterizer.setPolygonMode(vk::PolygonMode::eFill);
+    rasterizer.setLineWidth(1.0f);
+    rasterizer.setCullMode(vk::CullModeFlagBits::eBack);
+    rasterizer.setFrontFace(vk::FrontFace::eClockwise);
 
-    rasterizer.depthBiasEnable = vk::False;
-    rasterizer.depthBiasConstantFactor = 0.0f;
-    rasterizer.depthBiasSlopeFactor = 0.0f;
-    rasterizer.depthBiasClamp = 0.0f;
+    rasterizer.setDepthBiasEnable(vk::False);
+    rasterizer.setDepthBiasConstantFactor(vk::False);
+    rasterizer.setDepthBiasSlopeFactor(0.0f);
+    rasterizer.setDepthBiasClamp(vk::False);
 
-    vk::PipelineMultisampleStateCreateInfo multisampling{};
-    multisampling.sampleShadingEnable = vk::False;
-    multisampling.rasterizationSamples = vk::SampleCountFlagBits::e1;
-    multisampling.minSampleShading = 1.0f;
-    multisampling.pSampleMask = nullptr;
-    multisampling.alphaToCoverageEnable = vk::False;
-    multisampling.alphaToOneEnable = vk::False;
+    vk::PipelineMultisampleStateCreateInfo multisample{};
+    multisample.setSampleShadingEnable(vk::False);
+    multisample.setRasterizationSamples(vk::SampleCountFlagBits::e1);
+    multisample.setMinSampleShading(1.0f);
+    multisample.setPSampleMask(nullptr);
+    multisample.setAlphaToCoverageEnable(vk::False);
+    multisample.setAlphaToOneEnable(vk::False);
 
     vk::PipelineColorBlendAttachmentState colorBlendAttachment{};
     colorBlendAttachment.colorWriteMask =
@@ -70,19 +68,18 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
         | vk::ColorComponentFlagBits::eG
         | vk::ColorComponentFlagBits::eB
         | vk::ColorComponentFlagBits::eA;
-    colorBlendAttachment.blendEnable = vk::False;
-    colorBlendAttachment.srcColorBlendFactor = vk::BlendFactor::eOne;
-    colorBlendAttachment.dstColorBlendFactor = vk::BlendFactor::eZero;
-    colorBlendAttachment.colorBlendOp = vk::BlendOp::eAdd;
-    colorBlendAttachment.srcAlphaBlendFactor = vk::BlendFactor::eOne;
-    colorBlendAttachment.dstAlphaBlendFactor = vk::BlendFactor::eZero;
-    colorBlendAttachment.alphaBlendOp = vk::BlendOp::eAdd;
+    colorBlendAttachment.setBlendEnable(vk::False);
+    colorBlendAttachment.setSrcColorBlendFactor(vk::BlendFactor::eOne);
+    colorBlendAttachment.setDstColorBlendFactor(vk::BlendFactor::eZero);
+    colorBlendAttachment.setColorBlendOp(vk::BlendOp::eAdd);
+    colorBlendAttachment.setSrcAlphaBlendFactor(vk::BlendFactor::eOne);
+    colorBlendAttachment.setDstAlphaBlendFactor(vk::BlendFactor::eZero);
+    colorBlendAttachment.setAlphaBlendOp(vk::BlendOp::eAdd);
 
     vk::PipelineColorBlendStateCreateInfo colorBlending{};
-    colorBlending.logicOpEnable = vk::False;
-    colorBlending.logicOp = vk::LogicOp::eCopy;
-    colorBlending.attachmentCount = 1;
-    colorBlending.pAttachments = &colorBlendAttachment;
+    colorBlending.setLogicOpEnable(vk::False);
+    colorBlending.setLogicOp(vk::LogicOp::eCopy);
+    colorBlending.setAttachments(colorBlendAttachment);
     colorBlending.blendConstants[0] = 0.0f;
     colorBlending.blendConstants[1] = 0.0f;
     colorBlending.blendConstants[2] = 0.0f;
@@ -91,8 +88,7 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
     const auto descriptorLayout = config.descriptorLayout.getVkHandle();
     pipelineLayoutInfo.setSetLayouts(descriptorLayout);
-    pipelineLayoutInfo.pushConstantRangeCount = 0;
-    pipelineLayoutInfo.pPushConstantRanges = nullptr;
+    pipelineLayoutInfo.setPushConstantRanges(nullptr);
 
     mPipelineLayout = mDevice.getVkHandle().createPipelineLayoutUnique(pipelineLayoutInfo);
 
@@ -100,35 +96,33 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
     auto attributeDescriptions = Vertex::getAttributeDescriptions();
 
     vk::PipelineVertexInputStateCreateInfo vertexInputInfo{};
-    vertexInputInfo.vertexBindingDescriptionCount = 1U;
-    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
-    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
-    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
+    vertexInputInfo.setVertexBindingDescriptions(bindingDescription);
+    vertexInputInfo.setVertexAttributeDescriptions(attributeDescriptions);
 
     vk::PipelineInputAssemblyStateCreateInfo inputAssembly{};
-    inputAssembly.topology = vk::PrimitiveTopology::eTriangleList;
-    inputAssembly.primitiveRestartEnable = false;
+    inputAssembly.setTopology(vk::PrimitiveTopology::eTriangleList);
+    inputAssembly.setPrimitiveRestartEnable(vk::False);
 
     vk::GraphicsPipelineCreateInfo pipelineInfo{};
     pipelineInfo.setStages(shaderStages);
 
-    pipelineInfo.pVertexInputState = &vertexInputInfo;
-    pipelineInfo.pInputAssemblyState = &inputAssembly;
-    pipelineInfo.pViewportState = &viewportState;
-    pipelineInfo.pRasterizationState = &rasterizer;
-    pipelineInfo.pMultisampleState = &multisampling;
-    pipelineInfo.pDepthStencilState = nullptr;
-    pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.pDynamicState = &dynamicState;
+    pipelineInfo.setPVertexInputState(&vertexInputInfo);
+    pipelineInfo.setPInputAssemblyState(&inputAssembly);
+    pipelineInfo.setPViewportState(&viewportState);
+    pipelineInfo.setPRasterizationState(&rasterizer);
+    pipelineInfo.setPMultisampleState(&multisample);
+    pipelineInfo.setPDepthStencilState(nullptr);
+    pipelineInfo.setPColorBlendState(&colorBlending);
+    pipelineInfo.setPDynamicState(&dynamicState);
 
-    pipelineInfo.layout = mPipelineLayout.get();
-    pipelineInfo.renderPass = config.renderpass.getVkHandle();
-    pipelineInfo.subpass = config.subpass;
+    pipelineInfo.setLayout(mPipelineLayout.get());
+    pipelineInfo.setRenderPass(config.renderpass.getVkHandle());
+    pipelineInfo.setSubpass(config.subpass);
 
-    pipelineInfo.basePipelineHandle = nullptr;
-    pipelineInfo.basePipelineIndex = -1;
+    pipelineInfo.setBasePipelineHandle(nullptr);
+    pipelineInfo.setBasePipelineIndex(-1);
 
-    mPipeline = mDevice.getVkHandle().createGraphicsPipelineUnique(VK_NULL_HANDLE, pipelineInfo).value;
+    mPipeline = mDevice.getVkHandle().createGraphicsPipelineUnique(nullptr, pipelineInfo).value;
 }
 
 const vk::Pipeline GraphicsPipeline::getVkHandle() const
