@@ -229,7 +229,7 @@ void VkRenderer::_createFramebuffers()
 void VkRenderer::_createCommandPool()
 {
     CommandPoolConfig config = {
-        .queueFamilyIndex = mDevice.value().getQueueFamilies().graphicsFamily.value(),
+        .queueFamilyIndex = mDevice->getQueueFamilies().graphicsFamily.value(),
     };
 
     mCommandPool.emplace(mDevice.value(), config);
@@ -288,7 +288,7 @@ void VkRenderer::_createGraphicsPipeline()
         .vertexShaderPath = "shaders/vertex.spv",
         .fragmentShaderPath = "shaders/fragment.spv",
 
-        .swapchainExtent = mDevice.value().getSwapchain().getExtent(),
+        .swapchainExtent = mDevice->getSwapchain().getExtent(),
 
         .renderpass = mRenderpass.value(),
         .subpass = 0,

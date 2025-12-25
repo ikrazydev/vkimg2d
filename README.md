@@ -40,7 +40,9 @@ make
 ### Visual Studio
 
 Using CMake extension, you can open the project as a folder.
-That is enough to compile and run the application.
+You can compile and run the application through it.
+
+If assets are not being copied, try building manually before running the app.
 
 ### Using Package Managers
 
