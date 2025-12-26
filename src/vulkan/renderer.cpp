@@ -244,7 +244,6 @@ void VkRenderer::_createBuffers(const VkRendererConfig& config)
 
 void VkRenderer::_createTextures(const VkRendererConfig& config)
 {
-    // Original
     auto image = Image{ "samples/sculpture_statue.jpg" };
     auto loadedImage = image.load();
 
@@ -260,7 +259,22 @@ void VkRenderer::_createTextures(const VkRendererConfig& config)
     SamplerConfig samplerConfig = {};
     mSampler.emplace(mDevice.value(), samplerConfig);
 
-    // TODO: ping-pong images
+    // Ping-pong images
+    ComputeImageConfig pingPongConfig = {
+        .commandPool = mCommandPool.value(),
+        .width = static_cast<uint32_t>(loadedImage.texWidth),
+        .height = static_cast<uint32_t>(loadedImage.texHeight),
+    };
+
+    mPingImages.clear();
+    mPongImages.clear();
+
+    mPingImages.reserve(config.framesInFlight);
+    mPongImages.reserve(config.framesInFlight);
+
+    for (size_t i = 0; i < config.framesInFlight; i++) {
+        mPingImages.emplace_back(mDevice.value(), pingPongConfig);
+    }
 }
 
 void VkRenderer::_createDescriptorLayouts(const VkRendererConfig& config)
@@ -292,7 +306,7 @@ void VkRenderer::_createDescriptorLayouts(const VkRendererConfig& config)
 
     DescriptorLayoutConfig samplerLayoutConfig = {
         .bindings = samplerBindings,
-        .stages = vk::ShaderStageFlagBits::eFragment,
+        .stages = vk::ShaderStageFlagBits::eCompute,
     };
 
     mSamplerDescriptorLayout.emplace(mDevice.value(), samplerLayoutConfig);
@@ -310,7 +324,7 @@ void VkRenderer::_createDescriptorLayouts(const VkRendererConfig& config)
 
     DescriptorLayoutConfig grayscaleLayoutConfig = {
         .bindings = grayscaleBindings,
-        .stages = vk::ShaderStageFlagBits::eFragment,
+        .stages = vk::ShaderStageFlagBits::eCompute,
     };
 
     mGrayscaleDescriptorLayout.emplace(mDevice.value(), grayscaleLayoutConfig);
@@ -318,25 +332,81 @@ void VkRenderer::_createDescriptorLayouts(const VkRendererConfig& config)
 
 void VkRenderer::_createDescriptorSets(const VkRendererConfig& config)
 {
-    DescriptorPoolConfig poolConfig = {
+    std::vector<DescriptorPoolSize> poolSizes;
+    poolSizes.reserve(2);
+
+    DescriptorPoolSize samplerPoolSize{
         .type = vk::DescriptorType::eCombinedImageSampler,
-        .count = static_cast<uint32_t>(config.framesInFlight),
-        .maxSets = static_cast<uint32_t>(config.framesInFlight) + IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE,
+        .count = static_cast<uint32_t>(config.framesInFlight) * 10,
+    };
+    
+    DescriptorPoolSize storagePoolSize{
+        .type = vk::DescriptorType::eStorageImage,
+        .count = static_cast<uint32_t>(config.framesInFlight) * 150,
+    };
+
+    poolSizes.push_back(samplerPoolSize);
+    poolSizes.push_back(storagePoolSize);
+
+    DescriptorPoolConfig poolConfig{
+        .sizes = poolSizes,
+        .maxSets = static_cast<uint32_t>(config.framesInFlight) * 200 + IMGUI_IMPL_VULKAN_MINIMUM_IMAGE_SAMPLER_POOL_SIZE,
     };
 
     mDescriptorPool.emplace(mDevice.value(), poolConfig);
 
-    DescriptorSetConfig setConfig = {
+    std::vector<DescriptorSetImage> graphicsImages;
+    graphicsImages.push_back(DescriptorSetImage{
+        .binding = 0U,
+        .texture = mTexture.value(),
+        .sampler = &mSampler.value(),
+        .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
+        .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+    });
+
+    DescriptorSetConfig graphicsConfig = {
         .descriptorLayout = mFragmentDescriptorLayout.value(),
         .descriptorPool = mDescriptorPool.value(),
 
-        .texture = mTexture.value(),
-        .sampler = mSampler.value(),
-
-        .count = config.framesInFlight,
+        .setCount = config.framesInFlight,
     };
 
-    mDescriptorSet.emplace(mDevice.value(), setConfig);
+    mGraphicsDescriptorSet.emplace(mDevice.value(), graphicsConfig);
+    mGraphicsDescriptorSet->update(DescriptorUpdateConfig{ .images = graphicsImages });
+
+    // TODO: move to render
+    /*std::vector<DescriptorSetImage> samplerImages;
+    samplerImages.push_back(DescriptorSetImage{
+        .binding = 0U,
+        .texture = mTexture.value(),
+        .sampler = &mSampler.value(),
+        .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
+        .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+    });
+    samplerImages.push_back(DescriptorSetImage{
+        .binding = 1U,
+        .texture = mPingImages[0],
+        .layout = vk::ImageLayout::eGeneral,
+        .descriptorType = vk::DescriptorType::eStorageImage,
+    });*/
+
+    DescriptorSetConfig samplerConfig = {
+        .descriptorLayout = mSamplerDescriptorLayout.value(),
+        .descriptorPool = mDescriptorPool.value(),
+
+        .setCount = config.framesInFlight,
+    };
+
+    mSamplerDescriptorSet.emplace(mDevice.value(), samplerConfig);
+
+    DescriptorSetConfig grayscaleConfig = {
+        .descriptorLayout = mGrayscaleDescriptorLayout.value(),
+        .descriptorPool = mDescriptorPool.value(),
+
+        .setCount = config.framesInFlight,
+    };
+
+    mGrayscaleDescriptorSet.emplace(mDevice.value(), grayscaleConfig);
 }
 
 void VkRenderer::_createPipelines()
@@ -351,7 +421,7 @@ void VkRenderer::_createPipelines()
 
     ComputePipelineConfig grayscaleConfig = {
         .shaderPath = "shaders/effects/grayscale.spv",
-        .descriptorLayout = mFragmentDescriptorLayout.value(),
+        .descriptorLayout = mGrayscaleDescriptorLayout.value(),
         .usePushConstants = false,
     };
 
@@ -431,8 +501,10 @@ void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)
         .commandPool = mCommandPool.value(),
         .renderpass = mRenderpass.value(),
         .framebuffers = &mFramebuffers,
-        .descriptorSet = mDescriptorSet.value(),
-        .pipeline = mGraphicsPipeline.value(),
+        .graphicsDescSet = mGraphicsDescriptorSet.value(),
+        .samplerDescSet = mSamplerDescriptorSet.value(),
+        .graphicsPipeline = mGraphicsPipeline.value(),
+        .computePipeline = mSamplerPipeline.value(),
 
         .extent = mDevice->getSwapchain().getExtent(),
 

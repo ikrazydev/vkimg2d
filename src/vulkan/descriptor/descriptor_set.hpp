@@ -15,10 +15,21 @@ struct DescriptorSetConfig
     const DescriptorLayout& descriptorLayout;
     const DescriptorPool& descriptorPool;
 
-    const TextureImage& texture;
-    const Sampler& sampler;
+    size_t setCount;
+};
 
-    size_t count;
+struct DescriptorSetImage
+{
+    uint32_t binding;
+    const TextureImage& texture;
+    const Sampler* sampler;
+    vk::ImageLayout layout;
+    vk::DescriptorType descriptorType;
+};
+
+struct DescriptorUpdateConfig
+{
+    const std::vector<DescriptorSetImage>& images;
 };
 
 class DescriptorSet
@@ -26,7 +37,11 @@ class DescriptorSet
 public:
     DescriptorSet(const Device& device, const DescriptorSetConfig& config);
 
+    void update(const DescriptorUpdateConfig& config) const;
+
     const vk::DescriptorSet getVkHandle(size_t index) const;
 private:
+    const Device& mDevice;
+
     std::vector<vk::UniqueDescriptorSet> mSets;
 };

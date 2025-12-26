@@ -2,10 +2,15 @@
 
 #include <vulkan/include.hpp>
 
-struct DescriptorPoolConfig
+struct DescriptorPoolSize
 {
     vk::DescriptorType type;
     uint32_t count;
+};
+
+struct DescriptorPoolConfig
+{
+    const std::vector<DescriptorPoolSize>& sizes;
     uint32_t maxSets;
 };
 

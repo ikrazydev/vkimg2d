@@ -97,12 +97,17 @@ private:
     std::optional<TextureImage> mTexture;
     std::optional<Sampler> mSampler;
 
+    std::vector<TextureImage> mPingImages;
+    std::vector<TextureImage> mPongImages;
+
     std::optional<DescriptorLayout> mFragmentDescriptorLayout;
     std::optional<DescriptorLayout> mSamplerDescriptorLayout;
     std::optional<DescriptorLayout> mGrayscaleDescriptorLayout;
 
     std::optional<DescriptorPool> mDescriptorPool;
-    std::optional<DescriptorSet> mDescriptorSet;
+    std::optional<DescriptorSet> mSamplerDescriptorSet;
+    std::optional<DescriptorSet> mGrayscaleDescriptorSet;
+    std::optional<DescriptorSet> mGraphicsDescriptorSet;
 
     std::optional<ImGuiRenderer> mImGuiRenderer;
 

@@ -77,7 +77,44 @@ TextureImage::TextureImage(const Device& device, const TextureImageConfig& confi
     stagingBuffer.copyToImage(mImage.get(), static_cast<uint32_t>(image.texWidth), static_cast<uint32_t>(image.texHeight));
     _transitionImageLayout(vk::ImageLayout::eTransferDstOptimal, vk::ImageLayout::eShaderReadOnlyOptimal);
 
-    mImageView.emplace(mDevice, mImage.get(), config);
+    mImageView.emplace(mDevice, mImage.get(), imageInfo.format);
+}
+
+TextureImage::TextureImage(const Device& device, const ComputeImageConfig& config)
+    : mDevice{ device }
+    , mCommandPool{ config.commandPool }
+{
+    const auto deviceHandle = device.getVkHandle();
+
+    vk::ImageCreateInfo imageInfo{};
+    imageInfo.setImageType(vk::ImageType::e2D);
+    imageInfo.extent.setWidth(config.width);
+    imageInfo.extent.setHeight(config.height);
+    imageInfo.extent.setDepth(1U);
+    imageInfo.setMipLevels(1U);
+    imageInfo.setArrayLayers(1U);
+    imageInfo.setFormat(_imageTypeToFormat(TextureImageType::Compute));
+    imageInfo.setTiling(vk::ImageTiling::eOptimal);
+    imageInfo.setInitialLayout(vk::ImageLayout::eUndefined);
+    imageInfo.setUsage(_imageTypeToFlags(TextureImageType::Compute));
+    imageInfo.setSharingMode(vk::SharingMode::eExclusive);
+    imageInfo.setSamples(vk::SampleCountFlagBits::e1);
+    imageInfo.setFlags(vk::ImageCreateFlags());
+
+    mImage = deviceHandle.createImageUnique(imageInfo);
+
+    auto memoryRequirements = deviceHandle.getImageMemoryRequirements(mImage.get());
+
+    vk::MemoryAllocateInfo allocInfo{};
+    allocInfo.setAllocationSize(memoryRequirements.size);
+    allocInfo.setMemoryTypeIndex(Buffer::findMemoryType(device.getPhysicalDevice(), memoryRequirements.memoryTypeBits, vk::MemoryPropertyFlagBits::eDeviceLocal));
+
+    mMemory = deviceHandle.allocateMemoryUnique(allocInfo);
+    deviceHandle.bindImageMemory(mImage.get(), mMemory.get(), 0U);
+
+    _transitionImageLayout(vk::ImageLayout::eUndefined, vk::ImageLayout::eGeneral);
+
+    mImageView.emplace(device, mImage.get(), imageInfo.format);
 }
 
 const vk::Image TextureImage::getVkHandle() const
@@ -140,6 +177,16 @@ void TextureImage::_transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageLa
         srcStage = vk::PipelineStageFlagBits::eTransfer;
         dstStage = vk::PipelineStageFlagBits::eFragmentShader;
     }
+    else if (
+        oldLayout == vk::ImageLayout::eUndefined &&
+        newLayout == vk::ImageLayout::eGeneral
+        ) {
+        barrier.setSrcAccessMask(vk::AccessFlagBits::eNone);
+        barrier.setDstAccessMask(vk::AccessFlagBits::eShaderWrite);
+
+        srcStage = vk::PipelineStageFlagBits::eTopOfPipe;
+        dstStage = vk::PipelineStageFlagBits::eComputeShader;
+    }
     else {
         throw std::runtime_error("Unsupported layout transition.");
     }
@@ -147,12 +194,12 @@ void TextureImage::_transitionImageLayout(vk::ImageLayout oldLayout, vk::ImageLa
     commandBuffer.getVkHandle().pipelineBarrier(srcStage, dstStage, vk::DependencyFlags(), 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
-TextureImageView::TextureImageView(const Device& device, const vk::Image image, const TextureImageConfig& config)
+TextureImageView::TextureImageView(const Device& device, const vk::Image image, vk::Format format)
 {
     vk::ImageViewCreateInfo createInfo{};
     createInfo.setImage(image);
     createInfo.setViewType(vk::ImageViewType::e2D);
-    createInfo.setFormat(_imageTypeToFormat(config.type));
+    createInfo.setFormat(format);
 
     createInfo.components.setR(vk::ComponentSwizzle::eIdentity);
     createInfo.components.setG(vk::ComponentSwizzle::eIdentity);

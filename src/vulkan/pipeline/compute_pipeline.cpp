@@ -30,6 +30,7 @@ ComputePipeline::ComputePipeline(const Device& device, const ComputePipelineConf
 
     vk::ComputePipelineCreateInfo pipelineInfo{};
     pipelineInfo.setStage(shader.getStageInfo());
+    pipelineInfo.setLayout(mPipelineLayout.get());
 
     mPipeline = device.getVkHandle().createComputePipelineUnique(nullptr, pipelineInfo).value;
 }

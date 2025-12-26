@@ -2,10 +2,10 @@
 
 #include <optional>
 
-#include <io/image.hpp>
-
 #include <vulkan/include.hpp>
 #include <vulkan/buffer/commandpool.hpp>
+
+#include <io/image.hpp>
 
 class Device;
 
@@ -24,10 +24,17 @@ struct TextureImageConfig
     TextureImageType type;
 };
 
+struct ComputeImageConfig
+{
+    const CommandPool& commandPool;
+
+    uint32_t width, height;
+};
+
 class TextureImageView
 {
 public:
-    TextureImageView(const Device& device, const vk::Image image, const TextureImageConfig& config);
+    TextureImageView(const Device& device, const vk::Image image, vk::Format format);
 
     const vk::ImageView getVkHandle() const;
 private:
@@ -38,6 +45,7 @@ class TextureImage
 {
 public:
     TextureImage(const Device& device, const TextureImageConfig& config);
+    TextureImage(const Device& device, const ComputeImageConfig& config);
 
     const vk::Image getVkHandle() const;
     const vk::DeviceMemory getMemory() const;

@@ -47,7 +47,7 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
 
     buffer->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
 
-    buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, mConfig.pipeline.getVkHandle());
+    buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, mConfig.graphicsPipeline.getVkHandle());
 
     vk::Buffer vertexBuffers[] = { mConfig.vertexBuffer.getVkHandle()};
     vk::DeviceSize offsets[] = { 0U };
@@ -69,8 +69,8 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     scissor.setExtent(mConfig.extent);
     buffer->setScissor(0u, { scissor });
 
-    const auto descriptorSet = mConfig.descriptorSet.getVkHandle(currentFrame);
-    buffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mConfig.pipeline.getLayout(), 0U, descriptorSet, nullptr);
+    const auto descriptorSet = mConfig.graphicsDescSet.getVkHandle(currentFrame);
+    buffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mConfig.graphicsPipeline.getLayout(), 0U, descriptorSet, nullptr);
 
     buffer->drawIndexed(mConfig.drawIndexCount, mConfig.drawInstanceCount, 0U, 0U, 0U);
 

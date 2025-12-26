@@ -3,6 +3,7 @@
 #include <vulkan/include.hpp>
 #include <vulkan/buffer/commandpool.hpp>
 #include <vulkan/descriptor/descriptor_set.hpp>
+#include <vulkan/pipeline/compute_pipeline.hpp>
 #include <vulkan/pipeline/graphics_pipeline.hpp>
 
 #include <vector>
@@ -17,8 +18,11 @@ struct CommandBufferConfig
     const CommandPool& commandPool;
     const Renderpass& renderpass;
     const std::vector<Framebuffer>* framebuffers;
-    const DescriptorSet& descriptorSet;
-    const GraphicsPipeline& pipeline;
+
+    const DescriptorSet& graphicsDescSet;
+    const DescriptorSet& samplerDescSet;
+    const GraphicsPipeline& graphicsPipeline;
+    const ComputePipeline& computePipeline;
     
     vk::Extent2D extent;
 

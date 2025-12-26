@@ -3,30 +3,48 @@
 #include <vulkan/device.hpp>
 
 DescriptorSet::DescriptorSet(const Device& device, const DescriptorSetConfig& config)
+    : mDevice{ device }
 {
-    std::vector layouts(config.count, config.descriptorLayout.getVkHandle());
+    std::vector layouts(config.setCount, config.descriptorLayout.getVkHandle());
 
     vk::DescriptorSetAllocateInfo allocInfo{};
     allocInfo.descriptorPool = config.descriptorPool.getVkHandle();
     allocInfo.setSetLayouts(layouts);
 
     mSets = device.getVkHandle().allocateDescriptorSetsUnique(allocInfo);
+}
 
-    for (size_t i = 0; i < config.count; i++) {
-        vk::DescriptorImageInfo imageInfo{};
-        imageInfo.imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-        imageInfo.imageView = config.texture.getImageView();
-        imageInfo.sampler = config.sampler.getVkHandle();
+void DescriptorSet::update(const DescriptorUpdateConfig& config) const
+{
+    for (size_t set = 0; set < mSets.size(); set++) {
+        std::vector<vk::WriteDescriptorSet> descriptorWrites;
+        std::vector<vk::DescriptorImageInfo> imageInfos;
+        descriptorWrites.reserve(config.images.size());
+        imageInfos.reserve(config.images.size());
 
-        vk::WriteDescriptorSet descriptorWrite{};
-        descriptorWrite.dstSet = mSets[i].get();
-        descriptorWrite.dstBinding = 0U;
-        descriptorWrite.dstArrayElement = 0U;
-        descriptorWrite.descriptorType = vk::DescriptorType::eCombinedImageSampler;
-        descriptorWrite.descriptorCount = 1U;
-        descriptorWrite.pImageInfo = &imageInfo;
+        for (size_t i = 0; i < config.images.size(); i++) {
+            const auto& image = config.images[i];
 
-        device.getVkHandle().updateDescriptorSets(descriptorWrite, nullptr);
+            vk::DescriptorImageInfo imageInfo{};
+            imageInfo.setImageLayout(image.layout);
+            imageInfo.setImageView(image.texture.getImageView());
+            if (image.sampler != nullptr)
+                imageInfo.setSampler(image.sampler->getVkHandle());
+
+            imageInfos.push_back(imageInfo);
+
+            vk::WriteDescriptorSet descriptorWrite{};
+            descriptorWrite.setDstSet(mSets[set].get());
+            descriptorWrite.setDstBinding(image.binding);
+            descriptorWrite.setDstArrayElement(0U);
+            descriptorWrite.setDescriptorType(image.descriptorType);
+            descriptorWrite.setDescriptorCount(1U);
+            descriptorWrite.setPImageInfo(&imageInfos.back());
+
+            descriptorWrites.push_back(descriptorWrite);
+        }
+
+        mDevice.getVkHandle().updateDescriptorSets(descriptorWrites, nullptr);
     }
 }
 

@@ -4,15 +4,21 @@
 
 DescriptorPool::DescriptorPool(const Device& device, const DescriptorPoolConfig& config)
 {
-    vk::DescriptorPoolSize poolSize{};
-    poolSize.type = config.type;
-    poolSize.descriptorCount = config.count;
+    std::vector<vk::DescriptorPoolSize> poolSizes;
+    poolSizes.reserve(config.sizes.size());
+
+    for (const auto& configSize : config.sizes) {
+        vk::DescriptorPoolSize poolSize{};
+        poolSize.setType(configSize.type);
+        poolSize.setDescriptorCount(configSize.count);
+
+        poolSizes.push_back(poolSize);
+    }
 
     vk::DescriptorPoolCreateInfo poolInfo{};
-    poolInfo.poolSizeCount = 1U;
-    poolInfo.pPoolSizes = &poolSize;
-    poolInfo.maxSets = config.maxSets;
-    poolInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+    poolInfo.setPoolSizes(poolSizes);
+    poolInfo.setMaxSets(config.maxSets);
+    poolInfo.setFlags(vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet);
 
     mPool = device.getVkHandle().createDescriptorPoolUnique(poolInfo);
 }
