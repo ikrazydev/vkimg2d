@@ -1,13 +1,20 @@
 #pragma once
 
+#include <vector>
+
 #include <vulkan/include.hpp>
 
 class Device;
 
-struct DescriptorLayoutConfig
+struct DescriptorLayoutBindingConfig
 {
     uint32_t binding;
     vk::DescriptorType type;
+};
+
+struct DescriptorLayoutConfig
+{
+    const std::vector<DescriptorLayoutBindingConfig>& bindings;
     vk::ShaderStageFlagBits stages;
 };
 

@@ -63,11 +63,6 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
     multisample.setAlphaToOneEnable(vk::False);
 
     vk::PipelineColorBlendAttachmentState colorBlendAttachment{};
-    colorBlendAttachment.colorWriteMask =
-        vk::ColorComponentFlagBits::eR
-        | vk::ColorComponentFlagBits::eG
-        | vk::ColorComponentFlagBits::eB
-        | vk::ColorComponentFlagBits::eA;
     colorBlendAttachment.setBlendEnable(vk::False);
     colorBlendAttachment.setSrcColorBlendFactor(vk::BlendFactor::eOne);
     colorBlendAttachment.setDstColorBlendFactor(vk::BlendFactor::eZero);
@@ -75,6 +70,11 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
     colorBlendAttachment.setSrcAlphaBlendFactor(vk::BlendFactor::eOne);
     colorBlendAttachment.setDstAlphaBlendFactor(vk::BlendFactor::eZero);
     colorBlendAttachment.setAlphaBlendOp(vk::BlendOp::eAdd);
+    colorBlendAttachment.setColorWriteMask(
+        vk::ColorComponentFlagBits::eR
+        | vk::ColorComponentFlagBits::eG
+        | vk::ColorComponentFlagBits::eB
+        | vk::ColorComponentFlagBits::eA);
 
     vk::PipelineColorBlendStateCreateInfo colorBlending{};
     colorBlending.setLogicOpEnable(vk::False);

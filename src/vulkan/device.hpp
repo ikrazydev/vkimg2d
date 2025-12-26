@@ -12,12 +12,12 @@ class Window;
 
 struct DeviceQueueFamilies
 {
-    std::optional<uint32_t> graphicsFamily;
+    std::optional<uint32_t> graphicsAndComputeFamily;
     std::optional<uint32_t> presentFamily;
 
     bool isComplete() const
     {
-        return graphicsFamily.has_value() && presentFamily.has_value();
+        return graphicsAndComputeFamily.has_value() && presentFamily.has_value();
     }
 };
 
@@ -27,6 +27,7 @@ struct _DeviceCreationResult
 
     vk::Queue graphicsQueue;
     vk::Queue presentQueue;
+    vk::Queue computeQueue;
 };
 
 struct DeviceSwapchainDetails
@@ -79,6 +80,7 @@ private:
 
     vk::Queue mGraphicsQueue;
     vk::Queue mPresentQueue;
+    vk::Queue mComputeQueue;
 
     std::optional<DeviceSwapchain> mSwapchain;
 };

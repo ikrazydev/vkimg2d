@@ -17,6 +17,7 @@
 #include <vulkan/descriptor/descriptor_layout.hpp>
 #include <vulkan/descriptor/descriptor_pool.hpp>
 #include <vulkan/descriptor/descriptor_set.hpp>
+#include <vulkan/pipeline/compute_pipeline.hpp>
 #include <vulkan/pipeline/graphics_pipeline.hpp>
 #include <vulkan/sync/fence.hpp>
 #include <vulkan/sync/semaphore.hpp>
@@ -63,9 +64,10 @@ private:
     void _createFramebuffers();
     void _createCommandPool();
     void _createBuffers(const VkRendererConfig& config);
-    void _createTexture(const VkRendererConfig& config);
-    void _createDescriptors(const VkRendererConfig& config);
-    void _createGraphicsPipeline();
+    void _createTextures(const VkRendererConfig& config);
+    void _createDescriptorLayouts(const VkRendererConfig& config);
+    void _createDescriptorSets(const VkRendererConfig& config);
+    void _createPipelines();
     void _setupImGui(const VkRendererConfig& config);
     void _createCommandBuffers(const VkRendererConfig& config);
     void _createSyncObjects(const VkRendererConfig& config);
@@ -95,7 +97,10 @@ private:
     std::optional<TextureImage> mTexture;
     std::optional<Sampler> mSampler;
 
-    std::optional<DescriptorLayout> mDescriptorLayout;
+    std::optional<DescriptorLayout> mFragmentDescriptorLayout;
+    std::optional<DescriptorLayout> mSamplerDescriptorLayout;
+    std::optional<DescriptorLayout> mGrayscaleDescriptorLayout;
+
     std::optional<DescriptorPool> mDescriptorPool;
     std::optional<DescriptorSet> mDescriptorSet;
 
@@ -103,7 +108,9 @@ private:
 
     std::optional<CommandBuffer> mCommandBuffers;
 
-    std::optional<GraphicsPipeline> mPipeline;
+    std::optional<ComputePipeline> mSamplerPipeline;
+    std::optional<ComputePipeline> mGrayscalePipeline;
+    std::optional<GraphicsPipeline> mGraphicsPipeline;
 
     std::optional<BatchedSemaphores> mImageAvailableSemaphores;
     std::optional<BatchedSemaphores> mRenderedPerImageSemaphores;

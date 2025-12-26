@@ -4,16 +4,23 @@
 
 DescriptorLayout::DescriptorLayout(const Device& device, const DescriptorLayoutConfig& config)
 {
-    vk::DescriptorSetLayoutBinding samplerBinding{};
-    samplerBinding.binding = config.binding;
-    samplerBinding.descriptorCount = 1U;
-    samplerBinding.descriptorType = config.type;
-    samplerBinding.pImmutableSamplers = nullptr;
-    samplerBinding.stageFlags = config.stages;
+    std::vector<vk::DescriptorSetLayoutBinding> bindings(config.bindings.size());
+
+    for (size_t i = 0; i < bindings.size(); i++) {
+        const auto& configBinding = config.bindings.at(i);
+
+        vk::DescriptorSetLayoutBinding binding{};
+        binding.binding = configBinding.binding;
+        binding.descriptorCount = 1U;
+        binding.descriptorType = configBinding.type;
+        binding.pImmutableSamplers = nullptr;
+        binding.stageFlags = config.stages;
+
+        bindings[i] = binding;
+    }
 
     vk::DescriptorSetLayoutCreateInfo layoutInfo{};
-    layoutInfo.bindingCount = 1U;
-    layoutInfo.pBindings = &samplerBinding;
+    layoutInfo.setBindings(bindings);
 
     mDescriptorLayout = device.getVkHandle().createDescriptorSetLayoutUnique(layoutInfo);
 }

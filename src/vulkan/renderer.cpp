@@ -29,9 +29,10 @@ VkRenderer::VkRenderer(VkRendererConfig config)
     _createFramebuffers();
     _createCommandPool();
     _createBuffers(config);
-    _createTexture(config);
-    _createDescriptors(config);
-    _createGraphicsPipeline();
+    _createTextures(config);
+    _createDescriptorLayouts(config);
+    _createDescriptorSets(config);
+    _createPipelines();
     _setupImGui(config);
     _createCommandBuffers(config);
     _createSyncObjects(config);
@@ -229,7 +230,7 @@ void VkRenderer::_createFramebuffers()
 void VkRenderer::_createCommandPool()
 {
     CommandPoolConfig config = {
-        .queueFamilyIndex = mDevice->getQueueFamilies().graphicsFamily.value(),
+        .queueFamilyIndex = mDevice->getQueueFamilies().graphicsAndComputeFamily.value(),
     };
 
     mCommandPool.emplace(mDevice.value(), config);
@@ -241,7 +242,7 @@ void VkRenderer::_createBuffers(const VkRendererConfig& config)
     mIndexBuffer.emplace(Buffer::createIndex(mDevice.value(), mCommandPool.value(), config.indices));
 }
 
-void VkRenderer::_createTexture(const VkRendererConfig& config)
+void VkRenderer::_createTextures(const VkRendererConfig& config)
 {
     // Original
     auto image = Image{ "samples/sculpture_statue.jpg" };
@@ -262,16 +263,61 @@ void VkRenderer::_createTexture(const VkRendererConfig& config)
     // TODO: ping-pong images
 }
 
-void VkRenderer::_createDescriptors(const VkRendererConfig& config)
+void VkRenderer::_createDescriptorLayouts(const VkRendererConfig& config)
 {
-    DescriptorLayoutConfig layoutConfig = {
-        .binding = 0U,
-        .type = vk::DescriptorType::eCombinedImageSampler,
+    std::vector<DescriptorLayoutBindingConfig> fragmentBindings{
+        DescriptorLayoutBindingConfig{
+            .binding = 0U,
+            .type = vk::DescriptorType::eCombinedImageSampler,
+        }
+    };
+
+    DescriptorLayoutConfig fragmentLayoutConfig = {
+        .bindings = fragmentBindings,
         .stages = vk::ShaderStageFlagBits::eFragment,
     };
 
-    mDescriptorLayout.emplace(mDevice.value(), layoutConfig);
+    mFragmentDescriptorLayout.emplace(mDevice.value(), fragmentLayoutConfig);
 
+    std::vector<DescriptorLayoutBindingConfig> samplerBindings{
+        DescriptorLayoutBindingConfig{
+            .binding = 0U,
+            .type = vk::DescriptorType::eCombinedImageSampler,
+        },
+        DescriptorLayoutBindingConfig{
+            .binding = 1U,
+            .type = vk::DescriptorType::eStorageImage,
+        },
+    };
+
+    DescriptorLayoutConfig samplerLayoutConfig = {
+        .bindings = samplerBindings,
+        .stages = vk::ShaderStageFlagBits::eFragment,
+    };
+
+    mSamplerDescriptorLayout.emplace(mDevice.value(), samplerLayoutConfig);
+
+    std::vector<DescriptorLayoutBindingConfig> grayscaleBindings{
+        DescriptorLayoutBindingConfig{
+            .binding = 0U,
+            .type = vk::DescriptorType::eStorageImage,
+        },
+        DescriptorLayoutBindingConfig{
+            .binding = 1U,
+            .type = vk::DescriptorType::eStorageImage,
+        },
+    };
+
+    DescriptorLayoutConfig grayscaleLayoutConfig = {
+        .bindings = grayscaleBindings,
+        .stages = vk::ShaderStageFlagBits::eFragment,
+    };
+
+    mGrayscaleDescriptorLayout.emplace(mDevice.value(), grayscaleLayoutConfig);
+}
+
+void VkRenderer::_createDescriptorSets(const VkRendererConfig& config)
+{
     DescriptorPoolConfig poolConfig = {
         .type = vk::DescriptorType::eCombinedImageSampler,
         .count = static_cast<uint32_t>(config.framesInFlight),
@@ -281,7 +327,7 @@ void VkRenderer::_createDescriptors(const VkRendererConfig& config)
     mDescriptorPool.emplace(mDevice.value(), poolConfig);
 
     DescriptorSetConfig setConfig = {
-        .descriptorLayout = mDescriptorLayout.value(),
+        .descriptorLayout = mFragmentDescriptorLayout.value(),
         .descriptorPool = mDescriptorPool.value(),
 
         .texture = mTexture.value(),
@@ -293,9 +339,25 @@ void VkRenderer::_createDescriptors(const VkRendererConfig& config)
     mDescriptorSet.emplace(mDevice.value(), setConfig);
 }
 
-void VkRenderer::_createGraphicsPipeline()
+void VkRenderer::_createPipelines()
 {
-    GraphicsPipelineConfig config = {
+    ComputePipelineConfig samplerConfig = {
+        .shaderPath = "shaders/sampler.spv",
+        .descriptorLayout = mSamplerDescriptorLayout.value(),
+        .usePushConstants = false,
+    };
+
+    mSamplerPipeline.emplace(mDevice.value(), samplerConfig);
+
+    ComputePipelineConfig grayscaleConfig = {
+        .shaderPath = "shaders/effects/grayscale.spv",
+        .descriptorLayout = mFragmentDescriptorLayout.value(),
+        .usePushConstants = false,
+    };
+
+    mGrayscalePipeline.emplace(mDevice.value(), grayscaleConfig);
+
+    GraphicsPipelineConfig graphicsConfig = {
         .vertexShaderPath = "shaders/vertex.spv",
         .fragmentShaderPath = "shaders/fragment.spv",
 
@@ -304,10 +366,10 @@ void VkRenderer::_createGraphicsPipeline()
         .renderpass = mRenderpass.value(),
         .subpass = 0,
 
-        .descriptorLayout = mDescriptorLayout.value(),
+        .descriptorLayout = mFragmentDescriptorLayout.value(),
     };
 
-    mPipeline.emplace(mDevice.value(), config);
+    mGraphicsPipeline.emplace(mDevice.value(), graphicsConfig);
 }
 
 void VkRenderer::_setupImGui(const VkRendererConfig& config)
@@ -342,7 +404,7 @@ void VkRenderer::_setupImGui(const VkRendererConfig& config)
     initInfo.Instance = mInstance.get();
     initInfo.PhysicalDevice = mDevice->getPhysicalDevice(),
     initInfo.Device = mDevice->getVkHandle();
-    initInfo.QueueFamily = families.graphicsFamily.value();
+    initInfo.QueueFamily = families.graphicsAndComputeFamily.value();
     initInfo.Queue = mDevice->getGraphicsQueue();
     initInfo.PipelineCache = nullptr;
     initInfo.DescriptorPool = mDescriptorPool->getVkHandle();
@@ -370,7 +432,7 @@ void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)
         .renderpass = mRenderpass.value(),
         .framebuffers = &mFramebuffers,
         .descriptorSet = mDescriptorSet.value(),
-        .pipeline = mPipeline.value(),
+        .pipeline = mGraphicsPipeline.value(),
 
         .extent = mDevice->getSwapchain().getExtent(),
 

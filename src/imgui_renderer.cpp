@@ -41,7 +41,7 @@ void ImGuiRenderer::draw()
     ImGui::SameLine();
     ImGui::Button("Add");
 
-    if (ImGui::CollapsingHeader("Grayscale #1")) {
+    if (ImGui::CollapsingHeader("Grayscale #1", ImGuiTreeNodeFlags_DefaultOpen)) {
         static bool enabled = true;
         ImGui::Checkbox("Enabled", &enabled);
     }
@@ -52,6 +52,4 @@ void ImGuiRenderer::draw()
     ImGui::SliderFloat("Mix", &mixValue, 0.0f, 100.0f, "%.2f");
 
     ImGui::End();
-
-    ImGui::ShowDemoWindow();
 }

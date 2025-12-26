@@ -1,9 +1,6 @@
 #pragma once
 
-#include <array>
 #include <string_view>
-#include <optional>
-#include <vector>
 
 #include <vulkan/include.hpp>
 

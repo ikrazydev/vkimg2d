@@ -21,6 +21,7 @@ Device::Device(const VkRendererConfig& config, VkRenderer& renderer)
     mDevice = std::move(deviceCreationResult.device);
     mGraphicsQueue = deviceCreationResult.graphicsQueue;
     mPresentQueue = deviceCreationResult.presentQueue;
+    mComputeQueue = deviceCreationResult.computeQueue;
 
     recreateSwapchain();
 }
@@ -184,8 +185,8 @@ DeviceQueueFamilies Device::_findQueueFamilies(const vk::PhysicalDevice& device)
 
     for (uint32_t i = 0; i < families.size(); i++) {
         const auto& family = families[i];
-        if (family.queueFlags & vk::QueueFlagBits::eGraphics) {
-            indices.graphicsFamily = i;
+        if ((family.queueFlags & vk::QueueFlagBits::eGraphics) && (family.queueFlags & vk::QueueFlagBits::eCompute)) {
+            indices.graphicsAndComputeFamily = i;
         }
 
         auto presentSupport = device.getSurfaceSupportKHR(i, surface);
@@ -204,7 +205,7 @@ DeviceQueueFamilies Device::_findQueueFamilies(const vk::PhysicalDevice& device)
 _DeviceCreationResult Device::_createLogicalDevice(const VkRendererConfig& config)
 {
     std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
-    std::set uniqueQueueFamilies = { mQueueFamilies.graphicsFamily.value(), mQueueFamilies.presentFamily.value() };
+    std::set uniqueQueueFamilies = { mQueueFamilies.graphicsAndComputeFamily.value(), mQueueFamilies.presentFamily.value() };
 
     float queuePriority = 1.0f;
     for (auto queueFamily : uniqueQueueFamilies) {
@@ -232,14 +233,16 @@ _DeviceCreationResult Device::_createLogicalDevice(const VkRendererConfig& confi
 
     auto device = mPhysicalDevice.createDeviceUnique(deviceCreateInfo);
 
-    auto graphicsQueue = device->getQueue(mQueueFamilies.graphicsFamily.value(), 0);
+    auto graphicsQueue = device->getQueue(mQueueFamilies.graphicsAndComputeFamily.value(), 0);
     auto presentQueue = device->getQueue(mQueueFamilies.presentFamily.value(), 0);
+    auto computeQueue = device->getQueue(mQueueFamilies.graphicsAndComputeFamily.value(), 0);
 
     return _DeviceCreationResult{
         .device = std::move(device),
 
         .graphicsQueue = graphicsQueue,
         .presentQueue = presentQueue,
+        .computeQueue = computeQueue,
     };
 }
 

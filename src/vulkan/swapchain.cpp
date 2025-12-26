@@ -115,9 +115,9 @@ void DeviceSwapchain::_createSwapchain(const vk::SurfaceCapabilitiesKHR& capabil
     createInfo.setImageUsage(vk::ImageUsageFlagBits::eColorAttachment);
 
     const auto& families = mDevice.getQueueFamilies();
-    std::array familyIndices{ families.graphicsFamily.value(), families.presentFamily.value() };
+    std::array familyIndices{ families.graphicsAndComputeFamily.value(), families.presentFamily.value() };
 
-    if (families.graphicsFamily != families.presentFamily) {
+    if (families.graphicsAndComputeFamily != families.presentFamily) {
         createInfo.setImageSharingMode(vk::SharingMode::eConcurrent);
         createInfo.setQueueFamilyIndices(familyIndices);
     }
