@@ -48,7 +48,7 @@ void DescriptorSet::update(const DescriptorUpdateConfig& config) const
     }
 }
 
-const vk::DescriptorSet DescriptorSet::getVkHandle(size_t index) const
+vk::DescriptorSet DescriptorSet::getVkHandle(size_t index) const noexcept
 {
     return mSets[index].get();
 }

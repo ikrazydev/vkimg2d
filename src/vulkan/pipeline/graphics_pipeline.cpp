@@ -88,7 +88,17 @@ GraphicsPipeline::GraphicsPipeline(const Device& device, const GraphicsPipelineC
     vk::PipelineLayoutCreateInfo pipelineLayoutInfo{};
     const auto descriptorLayout = config.descriptorLayout.getVkHandle();
     pipelineLayoutInfo.setSetLayouts(descriptorLayout);
-    pipelineLayoutInfo.setPushConstantRanges(nullptr);
+    if (config.usePushConstants) {
+        vk::PushConstantRange range{};
+        range.setOffset(0U);
+        range.setSize(config.pushConstantSize);
+        range.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
+
+        pipelineLayoutInfo.setPushConstantRanges(range);
+    }
+    else {
+        pipelineLayoutInfo.setPushConstantRanges(nullptr);
+    }
 
     mPipelineLayout = mDevice.getVkHandle().createPipelineLayoutUnique(pipelineLayoutInfo);
 

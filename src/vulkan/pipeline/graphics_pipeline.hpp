@@ -19,6 +19,9 @@ struct GraphicsPipelineConfig
     uint32_t subpass;
 
     const DescriptorLayout& descriptorLayout;
+
+    bool usePushConstants;
+    uint32_t pushConstantSize;
 };
 
 class GraphicsPipeline

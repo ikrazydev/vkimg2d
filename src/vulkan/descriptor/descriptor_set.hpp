@@ -37,9 +37,15 @@ class DescriptorSet
 public:
     DescriptorSet(const Device& device, const DescriptorSetConfig& config);
 
+    DescriptorSet(DescriptorSet&&) = default;
+    DescriptorSet& operator=(DescriptorSet&&) = default;
+
+    DescriptorSet(const DescriptorSet&) = delete;
+    DescriptorSet& operator=(const DescriptorSet&) = delete;
+
     void update(const DescriptorUpdateConfig& config) const;
 
-    const vk::DescriptorSet getVkHandle(size_t index) const;
+    [[nodiscard]] vk::DescriptorSet getVkHandle(size_t index) const noexcept;
 private:
     const Device& mDevice;
 

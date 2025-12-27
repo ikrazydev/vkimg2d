@@ -11,17 +11,17 @@ Buffer::Buffer(const Device& device, const BufferConfig& config)
     const auto physicalDevice = device.getPhysicalDevice();
 
     vk::BufferCreateInfo bufferInfo{};
-    bufferInfo.size = config.size;
-    bufferInfo.usage = config.usage;
-    bufferInfo.sharingMode = vk::SharingMode::eExclusive;
+    bufferInfo.setSize(config.size);
+    bufferInfo.setUsage(config.usage);
+    bufferInfo.setSharingMode(vk::SharingMode::eExclusive);
 
     mBuffer = deviceHandle.createBufferUnique(bufferInfo);
 
     vk::MemoryRequirements memoryRequirements = deviceHandle.getBufferMemoryRequirements(mBuffer.get());
 
     vk::MemoryAllocateInfo allocInfo{};
-    allocInfo.allocationSize = memoryRequirements.size;
-    allocInfo.memoryTypeIndex = findMemoryType(physicalDevice, memoryRequirements.memoryTypeBits, config.properties);
+    allocInfo.setAllocationSize(memoryRequirements.size);
+    allocInfo.setMemoryTypeIndex(findMemoryType(physicalDevice, memoryRequirements.memoryTypeBits, config.properties));
 
     mMemory = deviceHandle.allocateMemoryUnique(allocInfo);
     deviceHandle.bindBufferMemory(mBuffer.get(), mMemory.get(), 0U);
@@ -32,9 +32,9 @@ void Buffer::copy(const Buffer& dstBuffer, vk::DeviceSize size) const
     auto commandBuffer = SingleTimeCommandBuffer{ mDevice, mCommandPool };
 
     vk::BufferCopy region{};
-    region.srcOffset = 0U;
-    region.dstOffset = 0U;
-    region.size = size;
+    region.setSrcOffset(0U);
+    region.setDstOffset(0U);
+    region.setSize(size);
     
     commandBuffer.getVkHandle().copyBuffer(mBuffer.get(), dstBuffer.getVkHandle(), region);
 }
@@ -44,17 +44,17 @@ void Buffer::copyToImage(vk::Image image, uint32_t width, uint32_t height) const
     auto commandBuffer = SingleTimeCommandBuffer{ mDevice, mCommandPool };
 
     vk::BufferImageCopy region{};
-    region.bufferOffset = 0U;
-    region.bufferRowLength = 0U;
-    region.bufferImageHeight = 0U;
+    region.setBufferOffset(0U);
+    region.setBufferRowLength(0U);
+    region.setBufferImageHeight(0U);
 
-    region.imageSubresource.aspectMask = vk::ImageAspectFlagBits::eColor;
-    region.imageSubresource.mipLevel = 0U;
-    region.imageSubresource.baseArrayLayer = 0U;
-    region.imageSubresource.layerCount = 1U;
+    region.imageSubresource.setAspectMask(vk::ImageAspectFlagBits::eColor);
+    region.imageSubresource.setMipLevel(0U);
+    region.imageSubresource.setBaseArrayLayer(0U);
+    region.imageSubresource.setLayerCount(1U);
 
-    region.imageOffset = vk::Offset3D{ 0, 0, 0 };
-    region.imageExtent = vk::Extent3D{ width, height, 1U };
+    region.setImageOffset(vk::Offset3D{ 0, 0, 0 });
+    region.setImageExtent(vk::Extent3D{ width, height, 1U });
 
     commandBuffer.getVkHandle().copyBufferToImage(mBuffer.get(), image, vk::ImageLayout::eTransferDstOptimal, region);
 }

@@ -6,7 +6,6 @@
 #include <vulkan/buffer/framebuffer.hpp>
 
 #include <imgui.h>
-#include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_vulkan.h>
 
 std::vector<vk::UniqueCommandBuffer> createCommandBuffers(const vk::Device device, const vk::CommandPool pool, uint32_t createCount)
@@ -28,8 +27,9 @@ CommandBuffer::CommandBuffer(const Device& device, const CommandBufferConfig& co
 
 void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
 {
-    const auto& buffer = mCommandBuffers[currentFrame];
-    
+    const auto& buffer = mCommandBuffers.at(currentFrame);
+    auto& renderImages = mConfig.renderImages.at(currentFrame);
+
     vk::CommandBufferBeginInfo beginInfo{};
     beginInfo.setFlags(vk::CommandBufferUsageFlags{});
     beginInfo.setPInheritanceInfo(nullptr);
@@ -43,17 +43,36 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     renderPassInfo.renderArea.setExtent(mConfig.extent);
 
     vk::ClearValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
-    renderPassInfo.setClearValues({ clearValue });
+    renderPassInfo.setClearValues(clearValue);
 
-    buffer->beginRenderPass(renderPassInfo, vk::SubpassContents::eInline);
+    buffer->beginRenderPass2(renderPassInfo, vk::SubpassContents::eInline);
 
+    // Sampler pipeline
+    buffer->bindPipeline(vk::PipelineBindPoint::eCompute, mConfig.computePipeline.getVkHandle());
+
+    auto samplerDescSet = mConfig.renderDescriptors.sampler.getVkHandle(currentFrame);
+    vk::BindDescriptorSetsInfo samplerBindInfo{};
+    samplerBindInfo.setStageFlags(vk::ShaderStageFlagBits::eCompute);
+    samplerBindInfo.setLayout(mConfig.computePipeline.getLayout());
+    samplerBindInfo.setDescriptorSets(samplerDescSet);
+    samplerBindInfo.setFirstSet(0U);
+    samplerBindInfo.setDynamicOffsets(nullptr);
+    buffer->bindDescriptorSets2(samplerBindInfo);
+
+    uint32_t groupsX = (renderImages.original.getWidth() + 15U) / 16U;
+    uint32_t groupsY = (renderImages.original.getHeight() + 15U) / 16U;
+    buffer->dispatch(groupsX, groupsY, 1U);
+
+    renderImages.ping.transitionComputeToFragmentRead(buffer.get());
+
+    // Graphics pipeline
     buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, mConfig.graphicsPipeline.getVkHandle());
 
     vk::Buffer vertexBuffers[] = { mConfig.vertexBuffer.getVkHandle()};
     vk::DeviceSize offsets[] = { 0U };
-    buffer->bindVertexBuffers(0U, vertexBuffers, offsets);
+    buffer->bindVertexBuffers2(0U, vertexBuffers, offsets);
 
-    buffer->bindIndexBuffer(mConfig.indexBuffer.getVkHandle(), 0U, vk::IndexType::eUint32);
+    buffer->bindIndexBuffer2(mConfig.indexBuffer.getVkHandle(), 0U, vk::WholeSize, vk::IndexType::eUint32);
 
     vk::Viewport viewport{};
     viewport.setX(0.0f);
@@ -69,14 +88,33 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     scissor.setExtent(mConfig.extent);
     buffer->setScissor(0u, { scissor });
 
-    const auto descriptorSet = mConfig.graphicsDescSet.getVkHandle(currentFrame);
-    buffer->bindDescriptorSets(vk::PipelineBindPoint::eGraphics, mConfig.graphicsPipeline.getLayout(), 0U, descriptorSet, nullptr);
+    // read the sampled image; TODO: switch to grayscale processing later
+    auto descriptorSet = mConfig.renderDescriptors.graphicsA.getVkHandle(currentFrame);
+    vk::BindDescriptorSetsInfo graphicsBindInfo{};
+    samplerBindInfo.setStageFlags(vk::ShaderStageFlagBits::eAllGraphics);
+    samplerBindInfo.setLayout(mConfig.graphicsPipeline.getLayout());
+    samplerBindInfo.setDescriptorSets(descriptorSet);
+    samplerBindInfo.setFirstSet(0U);
+    samplerBindInfo.setDynamicOffsets(nullptr);
+    buffer->bindDescriptorSets2(graphicsBindInfo);
+
+    std::array pushValues = { 1.0f };
+    vk::PushConstantsInfo pushConstInfo{};
+    pushConstInfo.setLayout(mConfig.graphicsPipeline.getLayout());
+    pushConstInfo.setStageFlags(vk::ShaderStageFlagBits::eFragment);
+    pushConstInfo.setOffset(0U);
+    pushConstInfo.setValues<float>(pushValues);
+    buffer->pushConstants2(pushConstInfo);
+
+    renderImages.ping.transitionComputeToFragmentRead(buffer.get());
 
     buffer->drawIndexed(mConfig.drawIndexCount, mConfig.drawInstanceCount, 0U, 0U, 0U);
 
+    renderImages.ping.transitionRevertToCompute(buffer.get());
+
     recordImGui(currentFrame, imageIndex);
 
-    buffer->endRenderPass();
+    buffer->endRenderPass2(vk::SubpassEndInfo{});
     buffer->end();
 }
 
@@ -89,7 +127,7 @@ void CommandBuffer::reset(uint32_t bufferIndex)
 void CommandBuffer::recordImGui(uint32_t currentFrame, uint32_t imageIndex)
 {
     const auto& buffer = mCommandBuffers[currentFrame];
-    
+
     ImGui::Render();
     auto* imGuiData = ImGui::GetDrawData();
     ImGui_ImplVulkan_RenderDrawData(imGuiData, buffer.get());

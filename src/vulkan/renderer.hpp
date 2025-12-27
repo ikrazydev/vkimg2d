@@ -16,7 +16,6 @@
 #include <vulkan/buffer/texture.hpp>
 #include <vulkan/descriptor/descriptor_layout.hpp>
 #include <vulkan/descriptor/descriptor_pool.hpp>
-#include <vulkan/descriptor/descriptor_set.hpp>
 #include <vulkan/pipeline/compute_pipeline.hpp>
 #include <vulkan/pipeline/graphics_pipeline.hpp>
 #include <vulkan/sync/fence.hpp>
@@ -45,8 +44,8 @@ class VkRenderer
 public:
     VkRenderer(VkRendererConfig config);
 
-    const vk::UniqueInstance& getInstance() const;
-    const vk::SurfaceKHR getSurface() const;
+    [[nodiscard]] const vk::UniqueInstance& getInstance() const noexcept;
+    [[nodiscard]] vk::SurfaceKHR getSurface() const noexcept;
 
     void draw();
 
@@ -96,18 +95,14 @@ private:
 
     std::optional<TextureImage> mTexture;
     std::optional<Sampler> mSampler;
-
-    std::vector<TextureImage> mPingImages;
-    std::vector<TextureImage> mPongImages;
+    std::vector<RenderImageSet> mImages;
 
     std::optional<DescriptorLayout> mFragmentDescriptorLayout;
     std::optional<DescriptorLayout> mSamplerDescriptorLayout;
     std::optional<DescriptorLayout> mGrayscaleDescriptorLayout;
 
     std::optional<DescriptorPool> mDescriptorPool;
-    std::optional<DescriptorSet> mSamplerDescriptorSet;
-    std::optional<DescriptorSet> mGrayscaleDescriptorSet;
-    std::optional<DescriptorSet> mGraphicsDescriptorSet;
+    std::optional<RenderDescriptorSets> mDescriptors;
 
     std::optional<ImGuiRenderer> mImGuiRenderer;
 

@@ -2,6 +2,7 @@
 
 #include <vulkan/include.hpp>
 #include <vulkan/buffer/commandpool.hpp>
+#include <vulkan/buffer/texture.hpp>
 #include <vulkan/descriptor/descriptor_set.hpp>
 #include <vulkan/pipeline/compute_pipeline.hpp>
 #include <vulkan/pipeline/graphics_pipeline.hpp>
@@ -13,17 +14,35 @@ class Device;
 class Renderpass;
 class Framebuffer;
 
+struct RenderDescriptorSets
+{
+    DescriptorSet sampler;
+
+    DescriptorSet computeAtoB;
+    DescriptorSet computeBtoA;
+
+    DescriptorSet graphicsA;
+    DescriptorSet graphicsB;
+};
+
+struct RenderImageSet
+{
+    const TextureImage& original;
+    TextureImage ping;
+    TextureImage pong;
+};
+
 struct CommandBufferConfig
 {
     const CommandPool& commandPool;
     const Renderpass& renderpass;
     const std::vector<Framebuffer>* framebuffers;
 
-    const DescriptorSet& graphicsDescSet;
-    const DescriptorSet& samplerDescSet;
+    const RenderDescriptorSets& renderDescriptors;
+    std::vector<RenderImageSet>& renderImages;
     const GraphicsPipeline& graphicsPipeline;
     const ComputePipeline& computePipeline;
-    
+
     vk::Extent2D extent;
 
     uint32_t createCount;

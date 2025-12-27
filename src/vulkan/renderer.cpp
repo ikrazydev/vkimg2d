@@ -1,6 +1,7 @@
 #include "renderer.hpp"
 
 #include <iostream>
+#include <utility>
 #include <stdexcept>
 
 #include <imgui.h>
@@ -38,12 +39,12 @@ VkRenderer::VkRenderer(VkRendererConfig config)
     _createSyncObjects(config);
 }
 
-const vk::UniqueInstance& VkRenderer::getInstance() const
+const vk::UniqueInstance& VkRenderer::getInstance() const noexcept
 {
     return mInstance;
 }
 
-const vk::SurfaceKHR VkRenderer::getSurface() const
+vk::SurfaceKHR VkRenderer::getSurface() const noexcept
 {
     return mSurface->getVkHandle();
 }
@@ -259,21 +260,21 @@ void VkRenderer::_createTextures(const VkRendererConfig& config)
     SamplerConfig samplerConfig = {};
     mSampler.emplace(mDevice.value(), samplerConfig);
 
-    // Ping-pong images
     ComputeImageConfig pingPongConfig = {
         .commandPool = mCommandPool.value(),
         .width = static_cast<uint32_t>(loadedImage.texWidth),
         .height = static_cast<uint32_t>(loadedImage.texHeight),
     };
 
-    mPingImages.clear();
-    mPongImages.clear();
-
-    mPingImages.reserve(config.framesInFlight);
-    mPongImages.reserve(config.framesInFlight);
+    mImages.clear();
+    mImages.reserve(config.framesInFlight);
 
     for (size_t i = 0; i < config.framesInFlight; i++) {
-        mPingImages.emplace_back(mDevice.value(), pingPongConfig);
+        mImages.emplace_back(
+            mTexture.value(),
+            TextureImage{ mDevice.value(), pingPongConfig },
+            TextureImage{ mDevice.value(), pingPongConfig }
+        );
     }
 }
 
@@ -283,7 +284,11 @@ void VkRenderer::_createDescriptorLayouts(const VkRendererConfig& config)
         DescriptorLayoutBindingConfig{
             .binding = 0U,
             .type = vk::DescriptorType::eCombinedImageSampler,
-        }
+        },
+        DescriptorLayoutBindingConfig{
+            .binding = 1U,
+            .type = vk::DescriptorType::eCombinedImageSampler,
+        },
     };
 
     DescriptorLayoutConfig fragmentLayoutConfig = {
@@ -333,13 +338,13 @@ void VkRenderer::_createDescriptorLayouts(const VkRendererConfig& config)
 void VkRenderer::_createDescriptorSets(const VkRendererConfig& config)
 {
     std::vector<DescriptorPoolSize> poolSizes;
-    poolSizes.reserve(2);
+    poolSizes.reserve(2U);
 
     DescriptorPoolSize samplerPoolSize{
         .type = vk::DescriptorType::eCombinedImageSampler,
         .count = static_cast<uint32_t>(config.framesInFlight) * 10,
     };
-    
+
     DescriptorPoolSize storagePoolSize{
         .type = vk::DescriptorType::eStorageImage,
         .count = static_cast<uint32_t>(config.framesInFlight) * 150,
@@ -371,8 +376,8 @@ void VkRenderer::_createDescriptorSets(const VkRendererConfig& config)
         .setCount = config.framesInFlight,
     };
 
-    mGraphicsDescriptorSet.emplace(mDevice.value(), graphicsConfig);
-    mGraphicsDescriptorSet->update(DescriptorUpdateConfig{ .images = graphicsImages });
+    DescriptorSet graphics{ mDevice.value(), graphicsConfig };
+    graphics.update(DescriptorUpdateConfig{ .images = graphicsImages });
 
     // TODO: move to render
     /*std::vector<DescriptorSetImage> samplerImages;
@@ -397,7 +402,7 @@ void VkRenderer::_createDescriptorSets(const VkRendererConfig& config)
         .setCount = config.framesInFlight,
     };
 
-    mSamplerDescriptorSet.emplace(mDevice.value(), samplerConfig);
+    //mSamplerDescriptorSet.emplace(mDevice.value(), samplerConfig);
 
     DescriptorSetConfig grayscaleConfig = {
         .descriptorLayout = mGrayscaleDescriptorLayout.value(),
@@ -406,7 +411,17 @@ void VkRenderer::_createDescriptorSets(const VkRendererConfig& config)
         .setCount = config.framesInFlight,
     };
 
-    mGrayscaleDescriptorSet.emplace(mDevice.value(), grayscaleConfig);
+    //mGrayscaleDescriptorSet.emplace(mDevice.value(), grayscaleConfig);
+
+    mDescriptors.emplace(RenderDescriptorSets{
+        .sampler = std::move(graphics),
+
+        .computeAtoB = std::move(graphics),
+        .computeBtoA = std::move(graphics),
+
+        .graphicsA = std::move(graphics),
+        .graphicsB = std::move(graphics),
+    });
 }
 
 void VkRenderer::_createPipelines()
@@ -437,6 +452,9 @@ void VkRenderer::_createPipelines()
         .subpass = 0,
 
         .descriptorLayout = mFragmentDescriptorLayout.value(),
+
+        .usePushConstants = true,
+        .pushConstantSize = 4U,
     };
 
     mGraphicsPipeline.emplace(mDevice.value(), graphicsConfig);
@@ -501,8 +519,9 @@ void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)
         .commandPool = mCommandPool.value(),
         .renderpass = mRenderpass.value(),
         .framebuffers = &mFramebuffers,
-        .graphicsDescSet = mGraphicsDescriptorSet.value(),
-        .samplerDescSet = mSamplerDescriptorSet.value(),
+
+        .renderDescriptors = mDescriptors.value(),
+        .renderImages = mImages,
         .graphicsPipeline = mGraphicsPipeline.value(),
         .computePipeline = mSamplerPipeline.value(),
 
