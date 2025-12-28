@@ -40,8 +40,9 @@ struct CommandBufferConfig
 
     const std::vector<RenderDescriptorSet>& renderDescriptors;
     std::vector<RenderImageSet>& renderImages;
+    const ComputePipeline& samplerPipeline;
+    const ComputePipeline& grayscalePipeline;
     const GraphicsPipeline& graphicsPipeline;
-    const ComputePipeline& computePipeline;
 
     vk::Extent2D extent;
 

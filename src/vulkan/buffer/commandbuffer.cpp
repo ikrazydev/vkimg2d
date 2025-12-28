@@ -38,12 +38,12 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     buffer->begin(beginInfo);
 
     // Sampler pipeline
-    buffer->bindPipeline(vk::PipelineBindPoint::eCompute, mConfig.computePipeline.getVkHandle());
+    buffer->bindPipeline(vk::PipelineBindPoint::eCompute, mConfig.samplerPipeline.getVkHandle());
 
     auto samplerDescSet = renderDescriptors.sampler.getVkHandle();
     vk::BindDescriptorSetsInfo samplerBindInfo{};
     samplerBindInfo.setStageFlags(vk::ShaderStageFlagBits::eCompute);
-    samplerBindInfo.setLayout(mConfig.computePipeline.getLayout());
+    samplerBindInfo.setLayout(mConfig.samplerPipeline.getLayout());
     samplerBindInfo.setDescriptorSets(samplerDescSet);
     samplerBindInfo.setFirstSet(0U);
     samplerBindInfo.setDynamicOffsets(nullptr);
@@ -53,7 +53,27 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     uint32_t groupsY = (renderImages.original.getHeight() + 15U) / 16U;
     buffer->dispatch(groupsX, groupsY, 1U);
 
-    renderImages.ping.transitionComputeToFragmentRead(buffer.get());
+    // Grayscale pipeline
+    buffer->bindPipeline(vk::PipelineBindPoint::eCompute, mConfig.grayscalePipeline.getVkHandle());
+
+    auto pingBarrier = renderImages.ping.createWriteToRead();
+    vk::DependencyInfo pingPongBarrier{};
+    pingPongBarrier.setImageMemoryBarriers(pingBarrier);
+
+    buffer->pipelineBarrier2(pingPongBarrier);
+
+    auto computeDescSet = renderDescriptors.computeAtoB.getVkHandle();
+    vk::BindDescriptorSetsInfo computeBindInfo{};
+    computeBindInfo.setStageFlags(vk::ShaderStageFlagBits::eCompute);
+    computeBindInfo.setLayout(mConfig.grayscalePipeline.getLayout());
+    computeBindInfo.setDescriptorSets(computeDescSet);
+    computeBindInfo.setFirstSet(0U);
+    computeBindInfo.setDynamicOffsets(nullptr);
+    buffer->bindDescriptorSets2(computeBindInfo);
+
+    buffer->dispatch(groupsX, groupsY, 1U);
+
+    renderImages.pong.transitionComputeToFragmentRead(buffer.get());
 
     // Graphics pipeline
     vk::RenderPassBeginInfo renderPassInfo{};
@@ -89,8 +109,7 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     scissor.setExtent(mConfig.extent);
     buffer->setScissor(0u, { scissor });
 
-    // read the sampled image; TODO: switch to grayscale processing later
-    auto descriptorSet = renderDescriptors.graphicsA.getVkHandle();;
+    auto descriptorSet = renderDescriptors.graphicsB.getVkHandle();;
     vk::BindDescriptorSetsInfo graphicsBindInfo{};
     graphicsBindInfo.setStageFlags(vk::ShaderStageFlagBits::eAllGraphics);
     graphicsBindInfo.setLayout(mConfig.graphicsPipeline.getLayout());
@@ -99,7 +118,7 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     graphicsBindInfo.setDynamicOffsets(nullptr);
     buffer->bindDescriptorSets2(graphicsBindInfo);
 
-    std::array pushValues = { 1.0f };
+    std::array pushValues = { 0.5f };
     vk::PushConstantsInfo pushConstInfo{};
     pushConstInfo.setLayout(mConfig.graphicsPipeline.getLayout());
     pushConstInfo.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
@@ -113,7 +132,17 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
 
     buffer->endRenderPass2(vk::SubpassEndInfo{});
 
-    renderImages.ping.transitionRevertToCompute(buffer.get());
+    renderImages.pong.transitionRevertToCompute(buffer.get());
+
+    auto revertPingBarrier = renderImages.ping.createReadToWrite();
+    auto revertPongBarrier = renderImages.pong.createWriteToRead();
+    std::array revertBarriers = { revertPingBarrier, revertPongBarrier };
+
+    vk::DependencyInfo revertPingPongBarrier{};
+    revertPingPongBarrier.setImageMemoryBarriers(revertBarriers);
+
+    buffer->pipelineBarrier2(revertPingPongBarrier);
+
     buffer->end();
 }
 
