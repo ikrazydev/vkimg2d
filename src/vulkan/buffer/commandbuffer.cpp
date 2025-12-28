@@ -37,17 +37,6 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
 
     buffer->begin(beginInfo);
 
-    vk::RenderPassBeginInfo renderPassInfo{};
-    renderPassInfo.setRenderPass(mConfig.renderpass.getVkHandle());
-    renderPassInfo.setFramebuffer((*mConfig.framebuffers)[imageIndex].getVkHandle());
-    renderPassInfo.renderArea.setOffset({ 0u, 0u });
-    renderPassInfo.renderArea.setExtent(mConfig.extent);
-
-    vk::ClearValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
-    renderPassInfo.setClearValues(clearValue);
-
-    buffer->beginRenderPass2(renderPassInfo, vk::SubpassContents::eInline);
-
     // Sampler pipeline
     buffer->bindPipeline(vk::PipelineBindPoint::eCompute, mConfig.computePipeline.getVkHandle());
 
@@ -67,6 +56,17 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     renderImages.ping.transitionComputeToFragmentRead(buffer.get());
 
     // Graphics pipeline
+    vk::RenderPassBeginInfo renderPassInfo{};
+    renderPassInfo.setRenderPass(mConfig.renderpass.getVkHandle());
+    renderPassInfo.setFramebuffer((*mConfig.framebuffers)[imageIndex].getVkHandle());
+    renderPassInfo.renderArea.setOffset({ 0u, 0u });
+    renderPassInfo.renderArea.setExtent(mConfig.extent);
+
+    vk::ClearValue clearValue{ { 0.0f, 0.0f, 0.0f, 1.0f } };
+    renderPassInfo.setClearValues(clearValue);
+
+    buffer->beginRenderPass2(renderPassInfo, vk::SubpassContents::eInline);
+
     buffer->bindPipeline(vk::PipelineBindPoint::eGraphics, mConfig.graphicsPipeline.getVkHandle());
 
     vk::Buffer vertexBuffers[] = { mConfig.vertexBuffer.getVkHandle()};
@@ -92,30 +92,28 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     // read the sampled image; TODO: switch to grayscale processing later
     auto descriptorSet = renderDescriptors.graphicsA.getVkHandle();;
     vk::BindDescriptorSetsInfo graphicsBindInfo{};
-    samplerBindInfo.setStageFlags(vk::ShaderStageFlagBits::eAllGraphics);
-    samplerBindInfo.setLayout(mConfig.graphicsPipeline.getLayout());
-    samplerBindInfo.setDescriptorSets(descriptorSet);
-    samplerBindInfo.setFirstSet(0U);
-    samplerBindInfo.setDynamicOffsets(nullptr);
+    graphicsBindInfo.setStageFlags(vk::ShaderStageFlagBits::eAllGraphics);
+    graphicsBindInfo.setLayout(mConfig.graphicsPipeline.getLayout());
+    graphicsBindInfo.setDescriptorSets(descriptorSet);
+    graphicsBindInfo.setFirstSet(0U);
+    graphicsBindInfo.setDynamicOffsets(nullptr);
     buffer->bindDescriptorSets2(graphicsBindInfo);
 
     std::array pushValues = { 1.0f };
     vk::PushConstantsInfo pushConstInfo{};
     pushConstInfo.setLayout(mConfig.graphicsPipeline.getLayout());
-    pushConstInfo.setStageFlags(vk::ShaderStageFlagBits::eFragment);
+    pushConstInfo.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);
     pushConstInfo.setOffset(0U);
     pushConstInfo.setValues<float>(pushValues);
     buffer->pushConstants2(pushConstInfo);
 
-    renderImages.ping.transitionComputeToFragmentRead(buffer.get());
-
     buffer->drawIndexed(mConfig.drawIndexCount, mConfig.drawInstanceCount, 0U, 0U, 0U);
-
-    renderImages.ping.transitionRevertToCompute(buffer.get());
 
     recordImGui(currentFrame, imageIndex);
 
     buffer->endRenderPass2(vk::SubpassEndInfo{});
+
+    renderImages.ping.transitionRevertToCompute(buffer.get());
     buffer->end();
 }
 

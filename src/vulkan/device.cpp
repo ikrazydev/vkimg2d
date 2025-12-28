@@ -220,9 +220,13 @@ _DeviceCreationResult Device::_createLogicalDevice(const VkRendererConfig& confi
     vk::PhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.setSamplerAnisotropy(vk::True);
 
+    vk::PhysicalDeviceVulkan13Features features{};
+    features.setSynchronization2(vk::True);
+
     vk::DeviceCreateInfo deviceCreateInfo{};
     deviceCreateInfo.setQueueCreateInfos(queueCreateInfos);
     deviceCreateInfo.setPEnabledFeatures(&deviceFeatures);
+    deviceCreateInfo.setPNext(&features);
 
     deviceCreateInfo.setPEnabledExtensionNames(config.deviceExtensions);
 
