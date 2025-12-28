@@ -14,8 +14,6 @@ struct DescriptorSetConfig
 {
     const DescriptorLayout& descriptorLayout;
     const DescriptorPool& descriptorPool;
-
-    size_t setCount;
 };
 
 struct DescriptorSetImage
@@ -45,9 +43,9 @@ public:
 
     void update(const DescriptorUpdateConfig& config) const;
 
-    [[nodiscard]] vk::DescriptorSet getVkHandle(size_t index) const noexcept;
+    [[nodiscard]] vk::DescriptorSet getVkHandle() const noexcept;
 private:
     const Device& mDevice;
 
-    std::vector<vk::UniqueDescriptorSet> mSets;
+    vk::UniqueDescriptorSet mSet;
 };

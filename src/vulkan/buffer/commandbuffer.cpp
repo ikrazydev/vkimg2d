@@ -29,6 +29,7 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
 {
     const auto& buffer = mCommandBuffers.at(currentFrame);
     auto& renderImages = mConfig.renderImages.at(currentFrame);
+    const auto& renderDescriptors = mConfig.renderDescriptors.at(currentFrame);
 
     vk::CommandBufferBeginInfo beginInfo{};
     beginInfo.setFlags(vk::CommandBufferUsageFlags{});
@@ -50,7 +51,7 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     // Sampler pipeline
     buffer->bindPipeline(vk::PipelineBindPoint::eCompute, mConfig.computePipeline.getVkHandle());
 
-    auto samplerDescSet = mConfig.renderDescriptors.sampler.getVkHandle(currentFrame);
+    auto samplerDescSet = renderDescriptors.sampler.getVkHandle();
     vk::BindDescriptorSetsInfo samplerBindInfo{};
     samplerBindInfo.setStageFlags(vk::ShaderStageFlagBits::eCompute);
     samplerBindInfo.setLayout(mConfig.computePipeline.getLayout());
@@ -89,7 +90,7 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     buffer->setScissor(0u, { scissor });
 
     // read the sampled image; TODO: switch to grayscale processing later
-    auto descriptorSet = mConfig.renderDescriptors.graphicsA.getVkHandle(currentFrame);
+    auto descriptorSet = renderDescriptors.graphicsA.getVkHandle();;
     vk::BindDescriptorSetsInfo graphicsBindInfo{};
     samplerBindInfo.setStageFlags(vk::ShaderStageFlagBits::eAllGraphics);
     samplerBindInfo.setLayout(mConfig.graphicsPipeline.getLayout());

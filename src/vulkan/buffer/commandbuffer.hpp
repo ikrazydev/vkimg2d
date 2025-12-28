@@ -14,7 +14,7 @@ class Device;
 class Renderpass;
 class Framebuffer;
 
-struct RenderDescriptorSets
+struct RenderDescriptorSet
 {
     DescriptorSet sampler;
 
@@ -38,7 +38,7 @@ struct CommandBufferConfig
     const Renderpass& renderpass;
     const std::vector<Framebuffer>* framebuffers;
 
-    const RenderDescriptorSets& renderDescriptors;
+    const std::vector<RenderDescriptorSet>& renderDescriptors;
     std::vector<RenderImageSet>& renderImages;
     const GraphicsPipeline& graphicsPipeline;
     const ComputePipeline& computePipeline;

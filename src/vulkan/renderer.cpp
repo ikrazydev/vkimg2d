@@ -344,7 +344,6 @@ void VkRenderer::_createDescriptorSets(const VkRendererConfig& config)
         .type = vk::DescriptorType::eCombinedImageSampler,
         .count = static_cast<uint32_t>(config.framesInFlight) * 10,
     };
-
     DescriptorPoolSize storagePoolSize{
         .type = vk::DescriptorType::eStorageImage,
         .count = static_cast<uint32_t>(config.framesInFlight) * 150,
@@ -360,68 +359,143 @@ void VkRenderer::_createDescriptorSets(const VkRendererConfig& config)
 
     mDescriptorPool.emplace(mDevice.value(), poolConfig);
 
-    std::vector<DescriptorSetImage> graphicsImages;
-    graphicsImages.push_back(DescriptorSetImage{
-        .binding = 0U,
-        .texture = mTexture.value(),
-        .sampler = &mSampler.value(),
-        .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
-        .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-    });
+    mDescriptors.clear();
+    mDescriptors.reserve(config.framesInFlight);
 
-    DescriptorSetConfig graphicsConfig = {
-        .descriptorLayout = mFragmentDescriptorLayout.value(),
-        .descriptorPool = mDescriptorPool.value(),
+    for (size_t i = 0; i < config.framesInFlight; i++)
+    {
+        const auto& images = mImages.at(i);
 
-        .setCount = config.framesInFlight,
-    };
+        std::vector<DescriptorSetImage> samplerImages;
+        samplerImages.reserve(2);
+        samplerImages.push_back(DescriptorSetImage{
+            .binding = 0U,
+            .texture = mTexture.value(),
+            .sampler = &mSampler.value(),
+            .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
+            .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+        });
+        samplerImages.push_back(DescriptorSetImage{
+            .binding = 1U,
+            .texture = images.ping,
+            .layout = vk::ImageLayout::eGeneral,
+            .descriptorType = vk::DescriptorType::eStorageImage,
+        });
 
-    DescriptorSet graphics{ mDevice.value(), graphicsConfig };
-    graphics.update(DescriptorUpdateConfig{ .images = graphicsImages });
+        DescriptorSetConfig samplerConfig = {
+            .descriptorLayout = mSamplerDescriptorLayout.value(),
+            .descriptorPool = mDescriptorPool.value()
+        };
 
-    // TODO: move to render
-    /*std::vector<DescriptorSetImage> samplerImages;
-    samplerImages.push_back(DescriptorSetImage{
-        .binding = 0U,
-        .texture = mTexture.value(),
-        .sampler = &mSampler.value(),
-        .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
-        .descriptorType = vk::DescriptorType::eCombinedImageSampler,
-    });
-    samplerImages.push_back(DescriptorSetImage{
-        .binding = 1U,
-        .texture = mPingImages[0],
-        .layout = vk::ImageLayout::eGeneral,
-        .descriptorType = vk::DescriptorType::eStorageImage,
-    });*/
+        DescriptorSet sampler{ mDevice.value(), samplerConfig };
+        sampler.update(DescriptorUpdateConfig{ .images = samplerImages });
 
-    DescriptorSetConfig samplerConfig = {
-        .descriptorLayout = mSamplerDescriptorLayout.value(),
-        .descriptorPool = mDescriptorPool.value(),
+        std::vector<DescriptorSetImage> computeABImages;
+        computeABImages.reserve(2);
+        computeABImages.push_back(DescriptorSetImage{
+            .binding = 0U,
+            .texture = images.ping,
+            .layout = vk::ImageLayout::eGeneral,
+            .descriptorType = vk::DescriptorType::eStorageImage,
+        });
+        computeABImages.push_back(DescriptorSetImage{
+            .binding = 1U,
+            .texture = images.pong,
+            .layout = vk::ImageLayout::eGeneral,
+            .descriptorType = vk::DescriptorType::eStorageImage,
+        });
 
-        .setCount = config.framesInFlight,
-    };
+        DescriptorSetConfig computeABConfig = {
+            .descriptorLayout = mGrayscaleDescriptorLayout.value(),
+            .descriptorPool = mDescriptorPool.value()
+        };
 
-    //mSamplerDescriptorSet.emplace(mDevice.value(), samplerConfig);
+        DescriptorSet computeAB{ mDevice.value(), computeABConfig };
+        computeAB.update(DescriptorUpdateConfig{ .images = computeABImages });
 
-    DescriptorSetConfig grayscaleConfig = {
-        .descriptorLayout = mGrayscaleDescriptorLayout.value(),
-        .descriptorPool = mDescriptorPool.value(),
+        std::vector<DescriptorSetImage> computeBAImages;
+        computeBAImages.reserve(2);
+        computeBAImages.push_back(DescriptorSetImage{
+            .binding = 0U,
+            .texture = images.pong,
+            .layout = vk::ImageLayout::eGeneral,
+            .descriptorType = vk::DescriptorType::eStorageImage,
+        });
+        computeBAImages.push_back(DescriptorSetImage{
+            .binding = 1U,
+            .texture = images.ping,
+            .layout = vk::ImageLayout::eGeneral,
+            .descriptorType = vk::DescriptorType::eStorageImage,
+        });
 
-        .setCount = config.framesInFlight,
-    };
+        DescriptorSetConfig computeBAConfig = {
+            .descriptorLayout = mGrayscaleDescriptorLayout.value(),
+            .descriptorPool = mDescriptorPool.value()
+        };
 
-    //mGrayscaleDescriptorSet.emplace(mDevice.value(), grayscaleConfig);
+        DescriptorSet computeBA{ mDevice.value(), computeBAConfig };
+        computeBA.update(DescriptorUpdateConfig{ .images = computeBAImages });
 
-    mDescriptors.emplace(RenderDescriptorSets{
-        .sampler = std::move(graphics),
+        std::vector<DescriptorSetImage> graphicsAImages;
+        graphicsAImages.reserve(2);
+        graphicsAImages.push_back(DescriptorSetImage{
+            .binding = 0U,
+            .texture = images.ping,
+            .sampler = &mSampler.value(),
+            .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
+            .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+        });
+        graphicsAImages.push_back(DescriptorSetImage{
+            .binding = 1U,
+            .texture = mTexture.value(),
+            .sampler = &mSampler.value(),
+            .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
+            .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+        });
 
-        .computeAtoB = std::move(graphics),
-        .computeBtoA = std::move(graphics),
+        DescriptorSetConfig graphicsAConfig = {
+            .descriptorLayout = mFragmentDescriptorLayout.value(),
+            .descriptorPool = mDescriptorPool.value(),
+        };
 
-        .graphicsA = std::move(graphics),
-        .graphicsB = std::move(graphics),
-    });
+        DescriptorSet graphicsA{ mDevice.value(), graphicsAConfig };
+        graphicsA.update(DescriptorUpdateConfig{ .images = graphicsAImages });
+
+        std::vector<DescriptorSetImage> graphicsBImages;
+        graphicsBImages.reserve(2);
+        graphicsBImages.push_back(DescriptorSetImage{
+            .binding = 0U,
+            .texture = images.pong,
+            .sampler = &mSampler.value(),
+            .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
+            .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+        });
+        graphicsBImages.push_back(DescriptorSetImage{
+            .binding = 1U,
+            .texture = mTexture.value(),
+            .sampler = &mSampler.value(),
+            .layout = vk::ImageLayout::eShaderReadOnlyOptimal,
+            .descriptorType = vk::DescriptorType::eCombinedImageSampler,
+        });
+
+        DescriptorSetConfig graphicsBConfig = {
+            .descriptorLayout = mFragmentDescriptorLayout.value(),
+            .descriptorPool = mDescriptorPool.value(),
+        };
+
+        DescriptorSet graphicsB{ mDevice.value(), graphicsBConfig };
+        graphicsB.update(DescriptorUpdateConfig{ .images = graphicsBImages });
+
+        mDescriptors.emplace_back(RenderDescriptorSet{
+            .sampler = std::move(sampler),
+
+            .computeAtoB = std::move(computeAB),
+            .computeBtoA = std::move(computeBA),
+
+            .graphicsA = std::move(graphicsA),
+            .graphicsB = std::move(graphicsB),
+        });
+    }
 }
 
 void VkRenderer::_createPipelines()
@@ -520,7 +594,7 @@ void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)
         .renderpass = mRenderpass.value(),
         .framebuffers = &mFramebuffers,
 
-        .renderDescriptors = mDescriptors.value(),
+        .renderDescriptors = mDescriptors,
         .renderImages = mImages,
         .graphicsPipeline = mGraphicsPipeline.value(),
         .computePipeline = mSamplerPipeline.value(),

@@ -102,7 +102,7 @@ private:
     std::optional<DescriptorLayout> mGrayscaleDescriptorLayout;
 
     std::optional<DescriptorPool> mDescriptorPool;
-    std::optional<RenderDescriptorSets> mDescriptors;
+    std::vector<RenderDescriptorSet> mDescriptors;
 
     std::optional<ImGuiRenderer> mImGuiRenderer;
 
