@@ -28,8 +28,9 @@ find_package(glfw3 REQUIRED)
 set(IMGUI_DIR external/imgui)
 
 add_executable(${PROJECT_NAME}
-    src/main.cpp
     src/app.cpp
+    src/app_data.cpp
+    src/main.cpp
     src/window.cpp
 
     src/imgui_renderer.cpp

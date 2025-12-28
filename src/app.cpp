@@ -71,6 +71,8 @@ void App::_initVulkan()
     auto exts = _getExtensionNames();
 
     VkRendererConfig config{
+        .appData = mAppData,
+
         .requiredExtensions = exts,
 
         .enableValidationLayers = gEnableValidationLayers,

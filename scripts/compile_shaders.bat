@@ -12,5 +12,7 @@ glslc -fshader-stage=fragment "%SHADER_DIR%\fragment.glsl" -o "%SHADER_DIR%\frag
 glslc -fshader-stage=compute "%SHADER_DIR%\sampler.glsl" -o "%SHADER_DIR%\sampler.spv"
 
 glslc -fshader-stage=compute "%SHADER_DIR%\effects\grayscale.glsl" -o "%SHADER_DIR%\effects\grayscale.spv"
+glslc -fshader-stage=compute "%SHADER_DIR%\effects\sepia.glsl" -o "%SHADER_DIR%\effects\sepia.spv"
+glslc -fshader-stage=compute "%SHADER_DIR%\effects\invert.glsl" -o "%SHADER_DIR%\effects\invert.spv"
 
 echo Shaders compiled.

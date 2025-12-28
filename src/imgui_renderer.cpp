@@ -1,6 +1,7 @@
 #include "imgui_renderer.hpp"
 
-ImGuiRenderer::ImGuiRenderer()
+ImGuiRenderer::ImGuiRenderer(AppData& appData)
+    : mAppData{ appData }
 {
 }
 
@@ -23,7 +24,7 @@ void ImGuiRenderer::draw()
 
     ImGui::Begin("Effects");
 
-    const char* items[] = { "Grayscale", "Sepia" };
+    const char* items[] = { "Grayscale", "Sepia", "Invert" };
     static const char* currentEffect = items[0];
 
     if (ImGui::BeginCombo("Effects", currentEffect)) {
@@ -37,7 +38,7 @@ void ImGuiRenderer::draw()
 
         ImGui::EndCombo();
     }
-    
+
     ImGui::SameLine();
     ImGui::Button("Add");
 
@@ -45,11 +46,12 @@ void ImGuiRenderer::draw()
         static bool enabled = true;
         ImGui::Checkbox("Enabled", &enabled);
     }
-    
+
     ImGui::Separator();
 
     static float mixValue = 100.0f;
-    ImGui::SliderFloat("Mix", &mixValue, 0.0f, 100.0f, "%.2f");
+    ImGui::SliderFloat("Master Mix", &mixValue, 0.0f, 100.0f, "%.2f");
+    mAppData.mix = mixValue / 100.0f;
 
     ImGui::End();
 }

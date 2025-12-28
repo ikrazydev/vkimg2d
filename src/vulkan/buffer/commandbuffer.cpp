@@ -118,7 +118,7 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     graphicsBindInfo.setDynamicOffsets(nullptr);
     buffer->bindDescriptorSets2(graphicsBindInfo);
 
-    std::array pushValues = { 0.5f };
+    std::array pushValues = { mConfig.appData.mix };
     vk::PushConstantsInfo pushConstInfo{};
     pushConstInfo.setLayout(mConfig.graphicsPipeline.getLayout());
     pushConstInfo.setStageFlags(vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment);

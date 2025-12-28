@@ -4,6 +4,7 @@
 
 #include <optional>
 
+#include <app_data.hpp>
 #include <vulkan/device.hpp>
 #include <vulkan/glfw_surface.hpp>
 #include <vulkan/renderpass.hpp>
@@ -25,6 +26,8 @@
 
 struct VkRendererConfig
 {
+    AppData& appData;
+
     const std::vector<const char*>& requiredExtensions;
 
     bool enableValidationLayers;
@@ -72,6 +75,8 @@ private:
     void _createSyncObjects(const VkRendererConfig& config);
 
     void _recreateSwapchain();
+
+    AppData& mAppData;
 
     Window& mWindow;
 

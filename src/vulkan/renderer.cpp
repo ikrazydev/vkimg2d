@@ -11,7 +11,8 @@
 VULKAN_HPP_DEFAULT_DISPATCH_LOADER_DYNAMIC_STORAGE;
 
 VkRenderer::VkRenderer(VkRendererConfig config)
-    : mWindow{ config.window }
+    : mAppData{ config.appData }
+    , mWindow{ config.window }
 {
     VULKAN_HPP_DEFAULT_DISPATCHER.init();
 
@@ -584,12 +585,14 @@ void VkRenderer::_setupImGui(const VkRendererConfig& config)
 
     ImGui_ImplVulkan_Init(&initInfo);
 
-    mImGuiRenderer.emplace();
+    mImGuiRenderer.emplace(mAppData);
 }
 
 void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)
 {
     CommandBufferConfig config = {
+        .appData = mAppData,
+
         .commandPool = mCommandPool.value(),
         .renderpass = mRenderpass.value(),
         .framebuffers = &mFramebuffers,

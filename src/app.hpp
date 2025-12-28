@@ -1,9 +1,10 @@
 #pragma once
 
+#include <optional>
+
+#include <app_data.hpp>
 #include <window.hpp>
 #include <vulkan/renderer.hpp>
-
-#include <optional>
 
 class App
 {
@@ -18,6 +19,8 @@ private:
     void _initVulkan();
 
     void _loop();
+
+    AppData mAppData;
 
     Window mWindow;
     std::optional<VkRenderer> mVkRenderer;

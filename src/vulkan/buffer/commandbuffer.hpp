@@ -1,13 +1,15 @@
 #pragma once
 
+#include <vector>
+
+#include <app_data.hpp>
+
 #include <vulkan/include.hpp>
 #include <vulkan/buffer/commandpool.hpp>
 #include <vulkan/buffer/texture.hpp>
 #include <vulkan/descriptor/descriptor_set.hpp>
 #include <vulkan/pipeline/compute_pipeline.hpp>
 #include <vulkan/pipeline/graphics_pipeline.hpp>
-
-#include <vector>
 
 class Buffer;
 class Device;
@@ -34,6 +36,8 @@ struct RenderImageSet
 
 struct CommandBufferConfig
 {
+    AppData& appData;
+
     const CommandPool& commandPool;
     const Renderpass& renderpass;
     const std::vector<Framebuffer>* framebuffers;
