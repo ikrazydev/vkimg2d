@@ -32,6 +32,8 @@ public:
     bool shouldClose() const;
     void update();
 
+    void waitForEvents() const;
+
     GLFWwindow* getGLFWHandle() const;
 
     bool mFramebufferResized = false;

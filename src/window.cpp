@@ -80,6 +80,11 @@ void Window::update()
     glfwPollEvents();
 }
 
+void Window::waitForEvents() const
+{
+    glfwWaitEvents();
+}
+
 GLFWwindow *Window::getGLFWHandle() const
 {
     return mWindow;

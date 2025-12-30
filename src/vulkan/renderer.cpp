@@ -629,6 +629,14 @@ void VkRenderer::_createSyncObjects(const VkRendererConfig& config)
 
 void VkRenderer::_recreateSwapchain()
 {
+    uint32_t width, height;
+    mWindow.getFramebufferSize(&width, &height);
+
+    while (width == 0 || height == 0) {
+        mWindow.getFramebufferSize(&width, &height);
+        mWindow.waitForEvents();
+    }
+
     mDevice->getVkHandle().waitIdle();
     mDevice->recreateSwapchain();
 
