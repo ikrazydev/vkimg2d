@@ -5,9 +5,8 @@
 #include <app.hpp>
 
 int main() {
-    App app;
-
     try {
+        App app;
         app.run();
     } catch (const std::exception& e) {
         std::cerr << "[[EXCEPTION OCCURRED]]\n";
