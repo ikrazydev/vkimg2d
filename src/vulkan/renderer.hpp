@@ -19,6 +19,7 @@
 #include <vulkan/descriptor/descriptor_pool.hpp>
 #include <vulkan/pipeline/compute_pipeline.hpp>
 #include <vulkan/pipeline/graphics_pipeline.hpp>
+#include <vulkan/pipeline/pipeline_set.hpp>
 #include <vulkan/sync/fence.hpp>
 #include <vulkan/sync/semaphore.hpp>
 #include <imgui_renderer.hpp>
@@ -104,7 +105,7 @@ private:
 
     std::optional<DescriptorLayout> mFragmentDescriptorLayout;
     std::optional<DescriptorLayout> mSamplerDescriptorLayout;
-    std::optional<DescriptorLayout> mGrayscaleDescriptorLayout;
+    std::optional<DescriptorLayout> mEffectDescriptorLayout;
 
     std::optional<DescriptorPool> mDescriptorPool;
     std::vector<RenderDescriptorSet> mDescriptors;
@@ -116,6 +117,7 @@ private:
     std::optional<ComputePipeline> mSamplerPipeline;
     std::optional<ComputePipeline> mGrayscalePipeline;
     std::optional<GraphicsPipeline> mGraphicsPipeline;
+    std::optional<PipelineSet> mPipelineSet;
 
     std::optional<BatchedSemaphores> mImageAvailableSemaphores;
     std::optional<BatchedSemaphores> mRenderedPerImageSemaphores;

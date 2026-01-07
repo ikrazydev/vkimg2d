@@ -317,7 +317,7 @@ void VkRenderer::_createDescriptorLayouts(const VkRendererConfig& config)
 
     mSamplerDescriptorLayout.emplace(mDevice.value(), samplerLayoutConfig);
 
-    std::vector<DescriptorLayoutBindingConfig> grayscaleBindings{
+    std::vector<DescriptorLayoutBindingConfig> effectBindings{
         DescriptorLayoutBindingConfig{
             .binding = 0U,
             .type = vk::DescriptorType::eStorageImage,
@@ -328,12 +328,12 @@ void VkRenderer::_createDescriptorLayouts(const VkRendererConfig& config)
         },
     };
 
-    DescriptorLayoutConfig grayscaleLayoutConfig = {
-        .bindings = grayscaleBindings,
+    DescriptorLayoutConfig effectLayoutConfig = {
+        .bindings = effectBindings,
         .stages = vk::ShaderStageFlagBits::eCompute,
     };
 
-    mGrayscaleDescriptorLayout.emplace(mDevice.value(), grayscaleLayoutConfig);
+    mEffectDescriptorLayout.emplace(mDevice.value(), effectLayoutConfig);
 }
 
 void VkRenderer::_createDescriptorSets(const VkRendererConfig& config)
@@ -407,7 +407,7 @@ void VkRenderer::_createDescriptorSets(const VkRendererConfig& config)
         });
 
         DescriptorSetConfig computeABConfig = {
-            .descriptorLayout = mGrayscaleDescriptorLayout.value(),
+            .descriptorLayout = mEffectDescriptorLayout.value(),
             .descriptorPool = mDescriptorPool.value()
         };
 
@@ -430,7 +430,7 @@ void VkRenderer::_createDescriptorSets(const VkRendererConfig& config)
         });
 
         DescriptorSetConfig computeBAConfig = {
-            .descriptorLayout = mGrayscaleDescriptorLayout.value(),
+            .descriptorLayout = mEffectDescriptorLayout.value(),
             .descriptorPool = mDescriptorPool.value()
         };
 
@@ -511,7 +511,7 @@ void VkRenderer::_createPipelines()
 
     ComputePipelineConfig grayscaleConfig = {
         .shaderPath = "shaders/effects/grayscale.spv",
-        .descriptorLayout = mGrayscaleDescriptorLayout.value(),
+        .descriptorLayout = mEffectDescriptorLayout.value(),
         .usePushConstants = false,
     };
 
@@ -533,6 +533,23 @@ void VkRenderer::_createPipelines()
     };
 
     mGraphicsPipeline.emplace(mDevice.value(), graphicsConfig);
+
+    std::unordered_map<std::string, ComputePipeline> effectPipelines;
+
+    for (const auto& effect : mAppData.registry.getEffects()) {
+        const auto& id = effect.getId();
+        const auto& shaderPath = effect.getShaderPath();
+
+        ComputePipelineConfig pipeConfig = {
+            .shaderPath = shaderPath,
+            .descriptorLayout = mEffectDescriptorLayout.value(),
+            .usePushConstants = false,
+        };
+
+        effectPipelines.try_emplace(id, mDevice.value(), pipeConfig);
+    }
+
+    mPipelineSet.emplace(std::move(effectPipelines));
 }
 
 void VkRenderer::_setupImGui(const VkRendererConfig& config)
