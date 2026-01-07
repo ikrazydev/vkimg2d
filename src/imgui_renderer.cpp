@@ -27,14 +27,17 @@ void ImGuiRenderer::draw()
 
     ImGui::Begin("Effects");
 
-    const char* items[] = { "Grayscale", "Sepia", "Invert" };
-    static const char* currentEffect = items[0];
+    const auto& regEffects = mAppData.registry.getEffects();
+    static size_t curEffectIndex = 0;
+    const auto& curEffect = regEffects.at(curEffectIndex);
+    const char* curEffectLabel = curEffect.getDisplayName().c_str();
 
-    if (ImGui::BeginCombo("Effects", currentEffect)) {
-        for (int n = 0; n < IM_ARRAYSIZE(items); n++) {
-            bool isSelected = (currentEffect == items[n]);
-            if (ImGui::Selectable(items[n], isSelected))
-                currentEffect = items[n];
+    if (ImGui::BeginCombo("Effects", curEffectLabel)) {
+        for (size_t i = 0; i < regEffects.size(); i++) {
+            bool isSelected = (curEffectIndex == i);
+            const char* name = regEffects.at(i).getDisplayName().c_str();
+            if (ImGui::Selectable(name, isSelected))
+                curEffectIndex = i;
             if (isSelected)
                 ImGui::SetItemDefaultFocus();
         }
@@ -43,20 +46,21 @@ void ImGuiRenderer::draw()
     }
 
     ImGui::SameLine();
-    ImGui::Button("Add");
-
-    const auto& effects = mAppData.effects;
-    for (size_t i = 0; i < effects.size(); i++) {
-        const auto& effect = effects.at(i);
-
-        std::string title = std::format("%s %d", effect.effect->getDisplayName(), i + 1);
-
-        if (ImGui::CollapsingHeader(title.c_str())) continue;
+    
+    if (ImGui::Button("Add")) {
+        mAppData.addEffect(&curEffect);
     }
 
-    if (ImGui::CollapsingHeader("Grayscale #1", ImGuiTreeNodeFlags_DefaultOpen)) {
-        static bool enabled = true;
-        ImGui::Checkbox("Enabled", &enabled);
+    auto& effects = mAppData.effects;
+    for (size_t i = 0; i < effects.size(); i++) {
+        auto& effect = effects.at(i);
+
+        std::string title = std::format("{} #{}", effect.effect->getDisplayName(), i + 1);
+
+        if (!ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) continue;
+
+        std::string checkboxText = std::format("Enabled##{}", i);
+        ImGui::Checkbox(checkboxText.c_str(), &effect.enabled);
     }
 
     ImGui::Separator();
