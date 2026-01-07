@@ -55,7 +55,7 @@ brew install glfw glm cmake
 # It includes MoltenVK
 
 # Set environment variables (add to ~/.zshrc):
-export VULKAN_BIN_SDK=~/VulkanSDK/1.4.321.0/macOS
+export VULKAN_BIN_SDK=~/VulkanSDK/VERSION/macOS
 export PATH=$VULKAN_BIN_SDK/bin:$PATH
 export VULKAN_SDK=/usr/local/share/vulkan
 export PATH=$VULKAN_SDK/bin:$PATH
