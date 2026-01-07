@@ -617,8 +617,8 @@ void VkRenderer::_createCommandBuffers(const VkRendererConfig& rendererConfig)
         .renderDescriptors = mDescriptors,
         .renderImages = mImages,
         .samplerPipeline = mSamplerPipeline.value(),
-        .grayscalePipeline = mGrayscalePipeline.value(),
         .graphicsPipeline = mGraphicsPipeline.value(),
+        .pipelineSet = mPipelineSet.value(),
 
         .extent = mDevice->getSwapchain().getExtent(),
 

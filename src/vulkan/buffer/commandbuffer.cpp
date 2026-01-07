@@ -53,27 +53,56 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     uint32_t groupsY = (renderImages.original.getHeight() + 15U) / 16U;
     buffer->dispatch(groupsX, groupsY, 1U);
 
-    // Grayscale pipeline
-    buffer->bindPipeline(vk::PipelineBindPoint::eCompute, mConfig.grayscalePipeline.getVkHandle());
-
+    // Effects pipeline
     auto pingBarrier = renderImages.ping.createWriteToRead();
-    vk::DependencyInfo pingPongBarrier{};
-    pingPongBarrier.setImageMemoryBarriers(pingBarrier);
+    vk::DependencyInfo prepBarrier{};
+    prepBarrier.setImageMemoryBarriers(pingBarrier);
 
-    buffer->pipelineBarrier2(pingPongBarrier);
+    buffer->pipelineBarrier2(prepBarrier);
 
-    auto computeDescSet = renderDescriptors.computeAtoB.getVkHandle();
-    vk::BindDescriptorSetsInfo computeBindInfo{};
-    computeBindInfo.setStageFlags(vk::ShaderStageFlagBits::eCompute);
-    computeBindInfo.setLayout(mConfig.grayscalePipeline.getLayout());
-    computeBindInfo.setDescriptorSets(computeDescSet);
-    computeBindInfo.setFirstSet(0U);
-    computeBindInfo.setDynamicOffsets(nullptr);
-    buffer->bindDescriptorSets2(computeBindInfo);
+    auto* readImage = &renderImages.ping;
+    auto* writeImage = &renderImages.pong;
 
-    buffer->dispatch(groupsX, groupsY, 1U);
+    const auto* currentDescriptor = &renderDescriptors.computeAtoB;
+    const auto* nextDescriptor = &renderDescriptors.computeBtoA;
 
-    renderImages.pong.transitionComputeToFragmentRead(buffer.get());
+    const auto* graphicsDescriptor = &renderDescriptors.graphicsA;
+    const auto* graphicsNextDescriptor = &renderDescriptors.graphicsB;
+
+    for (const auto& effect : mConfig.appData.effects) {
+        if (!effect.enabled) continue;
+
+        const auto& id = effect.effect->getId();
+        const auto& pipeline = mConfig.pipelineSet.effectPipelines.at(id);
+
+        buffer->bindPipeline(vk::PipelineBindPoint::eCompute, pipeline.getVkHandle());
+
+        auto computeDescSet = currentDescriptor->getVkHandle();
+        vk::BindDescriptorSetsInfo computeBindInfo{};
+        computeBindInfo.setStageFlags(vk::ShaderStageFlagBits::eCompute);
+        computeBindInfo.setLayout(pipeline.getLayout());
+        computeBindInfo.setDescriptorSets(computeDescSet);
+        computeBindInfo.setFirstSet(0U);
+        computeBindInfo.setDynamicOffsets(nullptr);
+        buffer->bindDescriptorSets2(computeBindInfo);
+
+        buffer->dispatch(groupsX, groupsY, 1U);
+
+        auto readBarrier = readImage->createReadToWrite();
+        auto writeBarrier = writeImage->createWriteToRead();
+        std::array barriers{ readBarrier, writeBarrier };
+
+        vk::DependencyInfo pingPongBarriers{};
+        pingPongBarriers.setImageMemoryBarriers(barriers);
+
+        buffer->pipelineBarrier2(pingPongBarriers);
+
+        std::swap(readImage, writeImage);
+        std::swap(currentDescriptor, nextDescriptor);
+        std::swap(graphicsDescriptor, graphicsNextDescriptor);
+    }
+
+    readImage->transitionComputeToFragmentRead(buffer.get());
 
     // Graphics pipeline
     vk::RenderPassBeginInfo renderPassInfo{};
@@ -109,7 +138,7 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     scissor.setExtent(mConfig.extent);
     buffer->setScissor(0u, { scissor });
 
-    auto descriptorSet = renderDescriptors.graphicsB.getVkHandle();;
+    auto descriptorSet = graphicsDescriptor->getVkHandle();;
     vk::BindDescriptorSetsInfo graphicsBindInfo{};
     graphicsBindInfo.setStageFlags(vk::ShaderStageFlagBits::eAllGraphics);
     graphicsBindInfo.setLayout(mConfig.graphicsPipeline.getLayout());
@@ -132,16 +161,19 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
 
     buffer->endRenderPass2(vk::SubpassEndInfo{});
 
-    renderImages.pong.transitionRevertToCompute(buffer.get());
+    readImage->transitionRevertToCompute(buffer.get());
 
-    auto revertPingBarrier = renderImages.ping.createReadToWrite();
-    auto revertPongBarrier = renderImages.pong.createWriteToRead();
-    std::array revertBarriers = { revertPingBarrier, revertPongBarrier };
+    if (readImage == &renderImages.ping)
+    {
+        auto revertReadBarrier = readImage->createReadToWrite();
+        auto revertWriteBarrier = writeImage->createWriteToRead();
+        std::array revertBarriers{ revertReadBarrier, revertWriteBarrier };
 
-    vk::DependencyInfo revertPingPongBarrier{};
-    revertPingPongBarrier.setImageMemoryBarriers(revertBarriers);
-
-    buffer->pipelineBarrier2(revertPingPongBarrier);
+        vk::DependencyInfo revertBarrier{};
+        revertBarrier.setImageMemoryBarriers(revertBarriers);
+    
+        buffer->pipelineBarrier2(revertBarrier);
+    }
 
     buffer->end();
 }

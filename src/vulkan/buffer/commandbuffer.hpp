@@ -10,6 +10,7 @@
 #include <vulkan/descriptor/descriptor_set.hpp>
 #include <vulkan/pipeline/compute_pipeline.hpp>
 #include <vulkan/pipeline/graphics_pipeline.hpp>
+#include <vulkan/pipeline/pipeline_set.hpp>
 
 class Buffer;
 class Device;
@@ -45,8 +46,8 @@ struct CommandBufferConfig
     const std::vector<RenderDescriptorSet>& renderDescriptors;
     std::vector<RenderImageSet>& renderImages;
     const ComputePipeline& samplerPipeline;
-    const ComputePipeline& grayscalePipeline;
     const GraphicsPipeline& graphicsPipeline;
+    const PipelineSet& pipelineSet;
 
     vk::Extent2D extent;
 
