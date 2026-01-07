@@ -1,5 +1,9 @@
 #include "imgui_renderer.hpp"
 
+#include <format>
+#include <ranges>
+#include <string>
+
 ImGuiRenderer::ImGuiRenderer(AppData& appData)
     : mAppData{ appData }
 {
@@ -19,8 +23,7 @@ void ImGuiRenderer::draw()
     ImGui::NewFrame();
 
     // TODO: support fullscreen docking in the future
-
-    auto& io = ImGui::GetIO();
+    //auto& io = ImGui::GetIO();
 
     ImGui::Begin("Effects");
 
@@ -41,6 +44,15 @@ void ImGuiRenderer::draw()
 
     ImGui::SameLine();
     ImGui::Button("Add");
+
+    const auto& effects = mAppData.effects;
+    for (size_t i = 0; i < effects.size(); i++) {
+        const auto& effect = effects.at(i);
+
+        std::string title = std::format("%s %d", effect.effect->getDisplayName(), i + 1);
+
+        if (ImGui::CollapsingHeader(title.c_str())) continue;
+    }
 
     if (ImGui::CollapsingHeader("Grayscale #1", ImGuiTreeNodeFlags_DefaultOpen)) {
         static bool enabled = true;

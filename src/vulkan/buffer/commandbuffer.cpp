@@ -25,6 +25,8 @@ CommandBuffer::CommandBuffer(const Device& device, const CommandBufferConfig& co
     mCommandBuffers = createCommandBuffers(device.getVkHandle(), config.commandPool.getVkHandle(), config.createCount);
 }
 
+#include <iostream>
+
 void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
 {
     const auto& buffer = mCommandBuffers.at(currentFrame);
@@ -47,6 +49,7 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
     samplerBindInfo.setDescriptorSets(samplerDescSet);
     samplerBindInfo.setFirstSet(0U);
     samplerBindInfo.setDynamicOffsets(nullptr);
+    std::cout << std::addressof(samplerDescSet) << " " << mConfig.samplerPipeline.getLayout() << std::endl;
     buffer->bindDescriptorSets2(samplerBindInfo);
 
     uint32_t groupsX = (renderImages.original.getWidth() + 15U) / 16U;
