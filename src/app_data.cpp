@@ -2,9 +2,7 @@
 
 void AppData::addEffect(const Effect* effect)
 {
-    EffectInstance inst{
-        .effect = effect,
-    };
+    EffectInstance inst{ effect };
 
     this->effects.push_back(inst);
 }

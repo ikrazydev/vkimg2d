@@ -4,10 +4,7 @@
 #include <string_view>
 #include <vector>
 
-struct EffectParameter
-{
-
-};
+#include <effect/param.hpp>
 
 class Effect
 {
@@ -17,10 +14,15 @@ public:
     [[nodiscard]] const std::string& getId() const noexcept;
     [[nodiscard]] const std::string& getDisplayName() const noexcept;
     [[nodiscard]] const std::string& getShaderPath() const noexcept;
+    [[nodiscard]] const std::vector<FloatParam>& getParams() const noexcept;
+
+    const FloatParam* getParamById(std::string_view id) const;
+
+    void addParam(FloatParam param);
 private:
     std::string mId;
     std::string mDisplayName;
     std::string mShaderPath;
 
-    std::vector<EffectParameter> mParameters;
+    std::vector<FloatParam> mParams;
 };

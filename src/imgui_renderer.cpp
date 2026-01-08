@@ -61,6 +61,26 @@ void ImGuiRenderer::draw()
 
         std::string checkboxText = std::format("Enabled##{}", i);
         ImGui::Checkbox(checkboxText.c_str(), &effect.enabled);
+
+        for (auto& param : effect.params) {
+            const auto& id = param.first;
+            auto* value = &param.second;
+
+            const auto* paramSpec = effect.effect->getParamById(id);
+
+            std::string paramText = std::format("{}##{}", paramSpec->displayName, i);
+            ImGui::SliderFloat(paramText.c_str(), value, paramSpec->min, paramSpec->max);
+        }
+
+        // if (ImGui::TreeNodeEx("Node Controls // TODO")) {
+        //     ImGui::Button("Move Up");
+        //     ImGui::SameLine();
+        //     ImGui::Button("Move Down");
+        //     ImGui::SameLine();
+        //     ImGui::Button("Delete");
+
+        //     ImGui::TreePop();
+        // }
     }
 
     ImGui::Separator();

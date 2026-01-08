@@ -36,6 +36,7 @@ add_executable(${PROJECT_NAME}
     src/imgui_renderer.cpp
 
     src/effect/effect.cpp
+    src/effect/instance.cpp
     src/effect/registry.cpp
 
     src/vulkan/device.cpp
