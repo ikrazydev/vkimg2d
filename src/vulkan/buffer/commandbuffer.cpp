@@ -86,6 +86,18 @@ void CommandBuffer::record(uint32_t currentFrame, uint32_t imageIndex)
         computeBindInfo.setDynamicOffsets(nullptr);
         buffer->bindDescriptorSets2(computeBindInfo);
 
+        if (effect.params.size() > 0U) {
+            auto pushValues = effect.getParamValues();
+
+            vk::PushConstantsInfo pushConstInfo{};
+            pushConstInfo.setLayout(pipeline.getLayout());
+            pushConstInfo.setStageFlags(vk::ShaderStageFlagBits::eCompute);
+            pushConstInfo.setOffset(0U);
+            pushConstInfo.setValues<float>(pushValues);
+
+            buffer->pushConstants2(pushConstInfo);
+        }
+
         buffer->dispatch(groupsX, groupsY, 1U);
 
         auto readBarrier = readImage->createReadToWrite();

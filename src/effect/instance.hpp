@@ -6,12 +6,15 @@
 
 struct EffectInstance
 {
+public:
+    EffectInstance(const Effect* effect);
+
     const Effect* effect;
     bool enabled = true;
 
     std::unordered_map<std::string, float> params{};
 
-    EffectInstance(const Effect* effect);
+    std::vector<float> getParamValues() const;
 private:
     void _loadDefaultParams();
 };

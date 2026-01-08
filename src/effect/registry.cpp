@@ -8,9 +8,20 @@ EffectRegistry::EffectRegistry()
     Effect invert{ EffectIds::Invert, "Invert", "shaders/effects/invert.spv" };
     Effect sepia{ EffectIds::Sepia, "Sepia", "shaders/effects/sepia.spv" };
 
+    Effect posterize{ EffectIds::Posterize, "Posterize", "shaders/effects/posterize.spv" };
+    posterize.addParam(FloatParam{
+        .id = "level",
+        .displayName = "Level",
+
+        .defaultValue = 4.0f,
+        .min = 0.0f, .max = 8.0f,
+    });
+
     mEffects.push_back(grayscale);
     mEffects.push_back(invert);
     mEffects.push_back(sepia);
+
+    mEffects.push_back(posterize);
 }
 
 const std::vector<Effect>& EffectRegistry::getEffects() const noexcept

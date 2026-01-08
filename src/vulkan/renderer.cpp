@@ -529,7 +529,7 @@ void VkRenderer::_createPipelines()
         .descriptorLayout = mFragmentDescriptorLayout.value(),
 
         .usePushConstants = true,
-        .pushConstantSize = 4U,
+        .pushConstantSize = sizeof(float),
     };
 
     mGraphicsPipeline.emplace(mDevice.value(), graphicsConfig);
@@ -540,10 +540,13 @@ void VkRenderer::_createPipelines()
         const auto& id = effect.getId();
         const auto& shaderPath = effect.getShaderPath();
 
+        uint32_t pushConstantSize = effect.getParams().size() * sizeof(float);
+
         ComputePipelineConfig pipeConfig = {
             .shaderPath = shaderPath,
             .descriptorLayout = mEffectDescriptorLayout.value(),
-            .usePushConstants = false,
+            .usePushConstants = pushConstantSize > 0U,
+            .pushConstantSize = pushConstantSize,
         };
 
         effectPipelines.try_emplace(id, mDevice.value(), pipeConfig);

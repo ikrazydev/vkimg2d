@@ -15,6 +15,8 @@ namespace EffectIds
     inline constexpr std::string_view Grayscale = "grayscale";
     inline constexpr std::string_view Invert = "invert";
     inline constexpr std::string_view Sepia = "sepia";
+
+    inline constexpr std::string_view Posterize = "posterize";
 }
 
 class EffectRegistry
