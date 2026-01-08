@@ -12,5 +12,7 @@ glslc -fshader-stage=compute "$SHADER_DIR/effects/grayscale.glsl" -o "$SHADER_DI
 glslc -fshader-stage=compute "$SHADER_DIR/effects/sepia.glsl" -o "$SHADER_DIR/effects/sepia.spv"
 glslc -fshader-stage=compute "$SHADER_DIR/effects/invert.glsl" -o "$SHADER_DIR/effects/invert.spv"
 glslc -fshader-stage=compute "$SHADER_DIR/effects/posterize.glsl" -o "$SHADER_DIR/effects/posterize.spv"
+glslc -fshader-stage=compute "$SHADER_DIR/effects/solarize.glsl" -o "$SHADER_DIR/effects/solarize.spv"
+glslc -fshader-stage=compute "$SHADER_DIR/effects/threshold.glsl" -o "$SHADER_DIR/effects/threshold.spv"
 
 echo "Shaders compiled."

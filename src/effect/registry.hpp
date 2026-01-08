@@ -17,6 +17,8 @@ namespace EffectIds
     inline constexpr std::string_view Sepia = "sepia";
 
     inline constexpr std::string_view Posterize = "posterize";
+    inline constexpr std::string_view Solarize = "solarize";
+    inline constexpr std::string_view Threshold = "threshold";
 }
 
 class EffectRegistry

@@ -12,9 +12,24 @@ EffectRegistry::EffectRegistry()
     posterize.addParam(FloatParam{
         .id = "level",
         .displayName = "Level",
-
         .defaultValue = 4.0f,
         .min = 0.0f, .max = 8.0f,
+    });
+
+    Effect solarize{ EffectIds::Solarize, "Solarize", "shaders/effects/solarize.spv" };
+    solarize.addParam(FloatParam{
+        .id = "threshold",
+        .displayName = "Threshold",
+        .defaultValue = 0.5f,
+        .min = 0.0f, .max = 1.0f,
+    });
+
+    Effect threshold{ EffectIds::Threshold, "Threshold", "shaders/effects/threshold.spv" };
+    threshold.addParam(FloatParam{
+        .id = "threshold",
+        .displayName = "Threshold",
+        .defaultValue = 0.5f,
+        .min = 0.0f, .max = 1.0f,
     });
 
     mEffects.push_back(grayscale);
@@ -22,6 +37,8 @@ EffectRegistry::EffectRegistry()
     mEffects.push_back(sepia);
 
     mEffects.push_back(posterize);
+    mEffects.push_back(solarize);
+    mEffects.push_back(threshold);
 }
 
 const std::vector<Effect>& EffectRegistry::getEffects() const noexcept

@@ -34,9 +34,6 @@ static const std::vector<uint32_t> gIndices = {
 App::App()
     : mWindow{ WindowConfig{} }
 {
-    const auto& registry = mAppData.registry;
-    mAppData.addEffect(registry.getById(EffectIds::Grayscale));
-
     _createWindow();
     _initVulkan();
 }
