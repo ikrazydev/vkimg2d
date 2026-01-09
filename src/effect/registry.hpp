@@ -5,11 +5,6 @@
 
 #include <effect/effect.hpp>
 
-struct RegisteredEffect
-{
-
-};
-
 namespace EffectIds
 {
     inline constexpr std::string_view Grayscale = "grayscale";
@@ -19,6 +14,10 @@ namespace EffectIds
     inline constexpr std::string_view Posterize = "posterize";
     inline constexpr std::string_view Solarize = "solarize";
     inline constexpr std::string_view Threshold = "threshold";
+
+    inline constexpr std::string_view BriCon = "bri_con";
+    inline constexpr std::string_view HueSat = "hue_sat";
+    inline constexpr std::string_view ColOffset = "color_offset";
 }
 
 class EffectRegistry

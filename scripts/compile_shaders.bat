@@ -16,6 +16,10 @@ glslc -fshader-stage=compute "%SHADER_DIR%\effects\sepia.glsl" -o "%SHADER_DIR%\
 glslc -fshader-stage=compute "%SHADER_DIR%\effects\invert.glsl" -o "%SHADER_DIR%\effects\invert.spv"
 glslc -fshader-stage=compute "%SHADER_DIR%\effects\posterize.glsl" -o "%SHADER_DIR%\effects\posterize.spv"
 glslc -fshader-stage=compute "%SHADER_DIR%\effects\solarize.glsl" -o "%SHADER_DIR%\effects\solarize.spv"
-glslc -fshader-stage=compute "%SHADER_DIR%\effects\threshold.glsl" -o "%SHADER_DIR%\effects\threshole.spv"
+glslc -fshader-stage=compute "%SHADER_DIR%\effects\threshold.glsl" -o "%SHADER_DIR%\effects\threshold.spv"
+
+glslc -fshader-stage=compute -I"%SHADER_DIR%\include" "%SHADER_DIR%\effects\bricon.glsl" -o "%SHADER_DIR%\effects\bricon.spv"
+glslc -fshader-stage=compute -I"%SHADER_DIR%\include" "%SHADER_DIR%\effects\huesat.glsl" -o "%SHADER_DIR%\effects\huesat.spv"
+glslc -fshader-stage=compute -I"%SHADER_DIR%\include" "%SHADER_DIR%\effects\coloffset.glsl" -o "%SHADER_DIR%\effects\coloffset.spv"
 
 echo Shaders compiled.

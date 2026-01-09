@@ -32,6 +32,60 @@ EffectRegistry::EffectRegistry()
         .min = 0.0f, .max = 1.0f,
     });
 
+    Effect briCon{ EffectIds::BriCon, "Brightness/Contrast", "shaders/effects/bricon.spv" };
+    briCon.addParam(FloatParam{
+        .id = "brightness",
+        .displayName = "Brightness",
+        .defaultValue = 0.0f,
+        .min = -1.0f, .max = 1.0f,
+    });
+    briCon.addParam(FloatParam{
+        .id = "contrast",
+        .displayName = "Contrast",
+        .defaultValue = 0.0f,
+        .min = -1.0f, .max = 1.0f,
+    });
+
+    Effect hueSat{ EffectIds::HueSat, "Hue/Saturation", "shaders/effects/huesat.spv" };
+    hueSat.addParam(FloatParam{
+        .id = "hue",
+        .displayName = "Hue",
+        .defaultValue = 0.0f,
+        .min = -1.0f, .max = 1.0f,
+    });
+    hueSat.addParam(FloatParam{
+        .id = "saturation",
+        .displayName = "Saturation",
+        .defaultValue = 0.0f,
+        .min = -1.0f, .max = 1.0f,
+    });
+    hueSat.addParam(FloatParam{
+        .id = "brightness",
+        .displayName = "Brightness",
+        .defaultValue = 0.0f,
+        .min = -1.0f, .max = 1.0f,
+    });
+
+    Effect colOffset{ EffectIds::ColOffset, "Color Offset", "shaders/effects/coloffset.spv" };
+    colOffset.addParam(FloatParam{
+        .id = "red_offset",
+        .displayName = "Red Offset",
+        .defaultValue = 0.0f,
+        .min = -1.0f, .max = 1.0f,
+    });
+    colOffset.addParam(FloatParam{
+        .id = "green_offset",
+        .displayName = "Green Offset",
+        .defaultValue = 0.0f,
+        .min = -1.0f, .max = 1.0f,
+    });
+    colOffset.addParam(FloatParam{
+        .id = "blue_offset",
+        .displayName = "Blue Offset",
+        .defaultValue = 0.0f,
+        .min = -1.0f, .max = 1.0f,
+    });
+
     mEffects.push_back(grayscale);
     mEffects.push_back(invert);
     mEffects.push_back(sepia);
@@ -39,6 +93,10 @@ EffectRegistry::EffectRegistry()
     mEffects.push_back(posterize);
     mEffects.push_back(solarize);
     mEffects.push_back(threshold);
+
+    mEffects.push_back(briCon);
+    mEffects.push_back(hueSat);
+    mEffects.push_back(colOffset);
 }
 
 const std::vector<Effect>& EffectRegistry::getEffects() const noexcept
