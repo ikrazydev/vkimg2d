@@ -1,6 +1,6 @@
 # VkImg2D
 
-A cross-platform Vulkan application for image manipulation designed to work on Windows, macOS (via MoltenVK), and Linux.
+A cross-platform Vulkan application for image manipulation and composition designed to work on Windows, macOS (via MoltenVK), and Linux.
 
 ## Dependencies
 
@@ -40,9 +40,10 @@ make
 ### Visual Studio
 
 Using CMake extension, you can open the project as a folder.
-You can compile and run the application through it.
+You can compile and run the application using that.
 
-If assets are not being copied, try building manually before running the app.
+**Note:** Assets are currently not being copied automatically,
+so "Build All" needs to be run for it to happen.
 
 ### Using Package Managers
 
