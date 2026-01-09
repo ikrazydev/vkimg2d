@@ -1,14 +1,16 @@
 #include "registry.hpp"
 
+#include <io/binary.hpp>
+
 EffectRegistry::EffectRegistry()
 {
     mEffects.reserve(16U); // this is intentionally ugly and random
 
-    Effect grayscale{ EffectIds::Grayscale, "Grayscale", "shaders/effects/grayscale.spv" };
-    Effect invert{ EffectIds::Invert, "Invert", "shaders/effects/invert.spv" };
-    Effect sepia{ EffectIds::Sepia, "Sepia", "shaders/effects/sepia.spv" };
+    Effect grayscale{ EffectIds::Grayscale, "Grayscale", BinaryReader::toShaderBinPath("grayscale.spv") };
+    Effect invert{ EffectIds::Invert, "Invert", BinaryReader::toShaderBinPath("invert.spv") };
+    Effect sepia{ EffectIds::Sepia, "Sepia", BinaryReader::toShaderBinPath("sepia.spv") };
 
-    Effect posterize{ EffectIds::Posterize, "Posterize", "shaders/effects/posterize.spv" };
+    Effect posterize{ EffectIds::Posterize, "Posterize", BinaryReader::toShaderBinPath("posterize.spv")};
     posterize.addParam(FloatParam{
         .id = "level",
         .displayName = "Level",
@@ -16,7 +18,7 @@ EffectRegistry::EffectRegistry()
         .min = 0.0f, .max = 8.0f,
     });
 
-    Effect solarize{ EffectIds::Solarize, "Solarize", "shaders/effects/solarize.spv" };
+    Effect solarize{ EffectIds::Solarize, "Solarize", BinaryReader::toShaderBinPath("solarize.spv") };
     solarize.addParam(FloatParam{
         .id = "threshold",
         .displayName = "Threshold",
@@ -24,7 +26,7 @@ EffectRegistry::EffectRegistry()
         .min = 0.0f, .max = 1.0f,
     });
 
-    Effect threshold{ EffectIds::Threshold, "Threshold", "shaders/effects/threshold.spv" };
+    Effect threshold{ EffectIds::Threshold, "Threshold", BinaryReader::toShaderBinPath("threshold.spv") };
     threshold.addParam(FloatParam{
         .id = "threshold",
         .displayName = "Threshold",
@@ -32,7 +34,7 @@ EffectRegistry::EffectRegistry()
         .min = 0.0f, .max = 1.0f,
     });
 
-    Effect briCon{ EffectIds::BriCon, "Brightness/Contrast", "shaders/effects/bricon.spv" };
+    Effect briCon{ EffectIds::BriCon, "Brightness/Contrast", BinaryReader::toShaderBinPath("bricon.spv") };
     briCon.addParam(FloatParam{
         .id = "brightness",
         .displayName = "Brightness",
@@ -46,7 +48,7 @@ EffectRegistry::EffectRegistry()
         .min = -1.0f, .max = 1.0f,
     });
 
-    Effect hueSat{ EffectIds::HueSat, "Hue/Saturation", "shaders/effects/huesat.spv" };
+    Effect hueSat{ EffectIds::HueSat, "Hue/Saturation", BinaryReader::toShaderBinPath("huesat.spv") };
     hueSat.addParam(FloatParam{
         .id = "hue",
         .displayName = "Hue",
@@ -66,7 +68,7 @@ EffectRegistry::EffectRegistry()
         .min = -1.0f, .max = 1.0f,
     });
 
-    Effect colOffset{ EffectIds::ColOffset, "Color Offset", "shaders/effects/coloffset.spv" };
+    Effect colOffset{ EffectIds::ColOffset, "Color Offset", BinaryReader::toShaderBinPath("coloffset.spv") };
     colOffset.addParam(FloatParam{
         .id = "red_offset",
         .displayName = "Red Offset",

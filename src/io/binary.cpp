@@ -1,6 +1,8 @@
 #include "binary.hpp"
 
-std::vector<char> BinaryReader::readFromPath(const std::string_view filepath)
+#include <format>
+
+std::vector<char> BinaryReader::readFromPath(std::string_view filepath)
 {
     std::ifstream file(filepath.data(), std::ios::ate | std::ios::binary);
 
@@ -17,4 +19,9 @@ std::vector<char> BinaryReader::readFromPath(const std::string_view filepath)
     file.close();
 
     return buffer;
+}
+
+std::string BinaryReader::toShaderBinPath(std::string_view filepath)
+{
+    return std::format("shaders/bin/{}", filepath);
 }

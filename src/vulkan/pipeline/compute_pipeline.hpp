@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string_view>
+#include <string>
 
 #include <vulkan/include.hpp>
 
@@ -9,7 +9,7 @@ class DescriptorLayout;
 
 struct ComputePipelineConfig
 {
-    std::string_view shaderPath;
+    std::string shaderPath;
 
     const DescriptorLayout& descriptorLayout;
 

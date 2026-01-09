@@ -1,5 +1,7 @@
 #include "renderer.hpp"
 
+#include <io/binary.hpp>
+
 #include <iostream>
 #include <utility>
 #include <stdexcept>
@@ -502,24 +504,16 @@ void VkRenderer::_createDescriptorSets(const VkRendererConfig& config)
 void VkRenderer::_createPipelines()
 {
     ComputePipelineConfig samplerConfig = {
-        .shaderPath = "shaders/sampler.spv",
+        .shaderPath = BinaryReader::toShaderBinPath("sampler.spv"),
         .descriptorLayout = mSamplerDescriptorLayout.value(),
         .usePushConstants = false,
     };
 
     mSamplerPipeline.emplace(mDevice.value(), samplerConfig);
 
-    ComputePipelineConfig grayscaleConfig = {
-        .shaderPath = "shaders/effects/grayscale.spv",
-        .descriptorLayout = mEffectDescriptorLayout.value(),
-        .usePushConstants = false,
-    };
-
-    mGrayscalePipeline.emplace(mDevice.value(), grayscaleConfig);
-
     GraphicsPipelineConfig graphicsConfig = {
-        .vertexShaderPath = "shaders/vertex.spv",
-        .fragmentShaderPath = "shaders/fragment.spv",
+        .vertexShaderPath = BinaryReader::toShaderBinPath("vertex.spv"),
+        .fragmentShaderPath = BinaryReader::toShaderBinPath("fragment.spv"),
 
         .swapchainExtent = mDevice->getSwapchain().getExtent(),
 
