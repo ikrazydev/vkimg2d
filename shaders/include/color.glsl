@@ -1,3 +1,5 @@
+#include "constants.glsl"
+
 vec3 rgbToHsl(vec3 color) {
     float maxColor = max(color.r, max(color.g, color.b));
     float minColor = min(color.r, min(color.g, color.b));
@@ -5,7 +7,7 @@ vec3 rgbToHsl(vec3 color) {
 
     float l = (maxColor + minColor) * 0.5;
 
-    if (delta < 0.00001) {
+    if (delta < EPSILON) {
         return vec3(0.0, 0.0, l);
     }
 
@@ -26,7 +28,7 @@ vec3 rgbToHsl(vec3 color) {
 }
 
 vec3 hslToRgb(vec3 hsl) {
-    if (hsl.y < 0.00001) {
+    if (hsl.y < EPSILON) {
         return vec3(hsl.z);
     }
 
