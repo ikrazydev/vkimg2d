@@ -14,6 +14,9 @@ namespace EffectIds
     inline constexpr std::string_view Posterize = "posterize";
     inline constexpr std::string_view Solarize = "solarize";
     inline constexpr std::string_view Threshold = "threshold";
+    inline constexpr std::string_view Exposure = "exposure";
+    inline constexpr std::string_view Gamma = "gamma";
+    inline constexpr std::string_view temperature = "temperature";
 
     inline constexpr std::string_view BriCon = "bri_con";
     inline constexpr std::string_view HueSat = "hue_sat";

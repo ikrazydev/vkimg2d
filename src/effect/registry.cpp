@@ -34,6 +34,30 @@ EffectRegistry::EffectRegistry()
         .min = 0.0f, .max = 1.0f,
     });
 
+    Effect exposure{ EffectIds::Exposure, "Exposure", BinaryReader::toShaderBinPath("exposure.spv") };
+    exposure.addParam(FloatParam{
+        .id = "eexposure",
+        .displayName = "Exposure",
+        .defaultValue = 0.0f,
+        .min = -8.0f, .max = 8.0f,
+    });
+
+    Effect gamma{ EffectIds::Gamma, "Gamma", BinaryReader::toShaderBinPath("gamma.spv") };
+    gamma.addParam(FloatParam{
+        .id = "gamma",
+        .displayName = "Gamma",
+        .defaultValue = 1.0f,
+        .min = 0.0f, .max = 5.0f,
+    });
+
+    Effect temperature{ EffectIds::temperature, "Temperature", BinaryReader::toShaderBinPath("temperature.spv") };
+    temperature.addParam(FloatParam{
+        .id = "temperature",
+        .displayName = "Temperature",
+        .defaultValue = 0.0f,
+        .min = -8.0f, .max = 8.0f,
+    });
+
     Effect briCon{ EffectIds::BriCon, "Brightness/Contrast", BinaryReader::toShaderBinPath("bricon.spv") };
     briCon.addParam(FloatParam{
         .id = "brightness",
@@ -95,6 +119,9 @@ EffectRegistry::EffectRegistry()
     mEffects.push_back(posterize);
     mEffects.push_back(solarize);
     mEffects.push_back(threshold);
+    mEffects.push_back(exposure);
+    mEffects.push_back(gamma);
+    mEffects.push_back(temperature);
 
     mEffects.push_back(briCon);
     mEffects.push_back(hueSat);
