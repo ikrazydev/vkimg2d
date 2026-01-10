@@ -105,7 +105,7 @@ EffectRegistry::EffectRegistry()
         .id = "mids",
         .displayName = "Mids",
         .defaultValue = 1.0f,
-        .min = 0.0f, .max = 1.0f,
+        .min = 0.0f, .max = 5.0f,
     });
 
     Effect hueSat{ EffectIds::HueSat, "Hue/Saturation", BinaryReader::toShaderBinPath("huesat.spv") };
