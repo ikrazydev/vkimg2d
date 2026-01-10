@@ -17,8 +17,8 @@ glslc -fshader-stage=fragment "%SHADER_DIR%\fragment.glsl" -o "%BIN_DIR%\fragmen
 glslc -fshader-stage=compute "%SHADER_DIR%\sampler.glsl" -o "%BIN_DIR%\sampler.spv"
 
 for %%f in ("%SHADER_DIR%\effects\*.glsl") do (
-    glslc -fshader-stage=compute -I"%INCLUDE_DIR%" "%%f" -o "%BIN_DIR%\%%~nxf.spv"
-    echo Compiled %%~nxf.glsl
+    glslc -fshader-stage=compute -I"%INCLUDE_DIR%" "%%f" -o "%BIN_DIR%\%%~nf.spv"
+    echo Compiled %%~nxf
 )
 
 echo Shaders compiled.
