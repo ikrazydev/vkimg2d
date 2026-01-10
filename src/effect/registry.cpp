@@ -50,12 +50,28 @@ EffectRegistry::EffectRegistry()
         .min = 0.0f, .max = 5.0f,
     });
 
-    Effect temperature{ EffectIds::temperature, "Temperature", BinaryReader::toShaderBinPath("temperature.spv") };
+    Effect temperature{ EffectIds::Temperature, "Temperature", BinaryReader::toShaderBinPath("temperature.spv") };
     temperature.addParam(FloatParam{
         .id = "temperature",
         .displayName = "Temperature",
         .defaultValue = 0.0f,
         .min = -8.0f, .max = 8.0f,
+    });
+
+    Effect vibrance{ EffectIds::Vibrance, "Vibrance", BinaryReader::toShaderBinPath("vibrance.spv") };
+    vibrance.addParam(FloatParam{
+        .id = "vibrance",
+        .displayName = "Vibrance",
+        .defaultValue = 0.0f,
+        .min = -1.0f, .max = 8.0f,
+    });
+
+    Effect sharpen{ EffectIds::Sharpen, "Sharpen", BinaryReader::toShaderBinPath("sharpen.spv") };
+    sharpen.addParam(FloatParam{
+        .id = "sharpen",
+        .displayName = "Sharpen",
+        .defaultValue = 0.0f,
+        .min = 0.0f, .max = 8.0f,
     });
 
     Effect briCon{ EffectIds::BriCon, "Brightness/Contrast", BinaryReader::toShaderBinPath("bricon.spv") };
@@ -70,6 +86,26 @@ EffectRegistry::EffectRegistry()
         .displayName = "Contrast",
         .defaultValue = 0.0f,
         .min = -1.0f, .max = 1.0f,
+    });
+
+    Effect levels{ EffectIds::Levels, "Levels", BinaryReader::toShaderBinPath("levels.spv") };
+    levels.addParam(FloatParam{
+        .id = "lows",
+        .displayName = "Lows",
+        .defaultValue = 0.0f,
+        .min = 0.0f, .max = 1.0f,
+    });
+    levels.addParam(FloatParam{
+        .id = "highs",
+        .displayName = "Highs",
+        .defaultValue = 1.0f,
+        .min = 0.0f, .max = 1.0f,
+    });
+    levels.addParam(FloatParam{
+        .id = "mids",
+        .displayName = "Mids",
+        .defaultValue = 1.0f,
+        .min = 0.0f, .max = 1.0f,
     });
 
     Effect hueSat{ EffectIds::HueSat, "Hue/Saturation", BinaryReader::toShaderBinPath("huesat.spv") };
@@ -112,6 +148,26 @@ EffectRegistry::EffectRegistry()
         .min = -1.0f, .max = 1.0f,
     });
 
+    Effect vignette{ EffectIds::Vignette, "Vignette", BinaryReader::toShaderBinPath("vignette.spv") };
+    vignette.addParam(FloatParam{
+        .id = "radius",
+        .displayName = "Radius",
+        .defaultValue = 0.5f,
+        .min = 0.0f, .max = 1.0f,
+    });
+    vignette.addParam(FloatParam{
+        .id = "softness",
+        .displayName = "Softness",
+        .defaultValue = 1.5f,
+        .min = 0.0f, .max = 2.0f,
+    });
+    vignette.addParam(FloatParam{
+        .id = "darkness",
+        .displayName = "Darkness",
+        .defaultValue = 1.0f,
+        .min = -1.0f, .max = 1.0f,
+    });
+
     mEffects.push_back(grayscale);
     mEffects.push_back(invert);
     mEffects.push_back(sepia);
@@ -122,10 +178,14 @@ EffectRegistry::EffectRegistry()
     mEffects.push_back(exposure);
     mEffects.push_back(gamma);
     mEffects.push_back(temperature);
+    mEffects.push_back(vibrance);
+    mEffects.push_back(sharpen);
 
     mEffects.push_back(briCon);
+    mEffects.push_back(levels);
     mEffects.push_back(hueSat);
     mEffects.push_back(colOffset);
+    mEffects.push_back(vignette);
 }
 
 const std::vector<Effect>& EffectRegistry::getEffects() const noexcept

@@ -16,11 +16,15 @@ namespace EffectIds
     inline constexpr std::string_view Threshold = "threshold";
     inline constexpr std::string_view Exposure = "exposure";
     inline constexpr std::string_view Gamma = "gamma";
-    inline constexpr std::string_view temperature = "temperature";
+    inline constexpr std::string_view Temperature = "temperature";
+    inline constexpr std::string_view Vibrance = "vibrance";
+    inline constexpr std::string_view Sharpen = "sharpen";
 
     inline constexpr std::string_view BriCon = "bri_con";
+    inline constexpr std::string_view Levels = "levels";
     inline constexpr std::string_view HueSat = "hue_sat";
     inline constexpr std::string_view ColOffset = "color_offset";
+    inline constexpr std::string_view Vignette = "vignette";
 }
 
 class EffectRegistry
