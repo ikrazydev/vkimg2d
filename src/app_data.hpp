@@ -13,4 +13,7 @@ struct AppData
     float mix = 1.0f;
 
     void addEffect(const Effect* effect);
+    void deleteEffect(const size_t index);
+    void moveUpEffect(const size_t index);
+    void moveDownEffect(const size_t index);
 };

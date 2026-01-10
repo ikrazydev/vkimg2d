@@ -1,5 +1,7 @@
 #pragma once
 
+#include <string>
+
 #include <app_data.hpp>
 
 #include <imgui.h>
@@ -14,5 +16,7 @@ public:
 
     void draw();
 private:
+    static std::string _toUniqueId(std::string_view str, const size_t index);
+
     AppData& mAppData;
 };

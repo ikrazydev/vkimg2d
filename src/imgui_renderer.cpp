@@ -3,6 +3,7 @@
 #include <format>
 #include <ranges>
 #include <string>
+#include <optional>
 
 ImGuiRenderer::ImGuiRenderer(AppData& appData)
     : mAppData{ appData }
@@ -52,6 +53,11 @@ void ImGuiRenderer::draw()
     }
 
     auto& effects = mAppData.effects;
+
+    std::optional<size_t> queueDelete;
+    std::optional<size_t> queueMoveUp;
+    std::optional<size_t> queueMoveDown;
+
     for (size_t i = 0; i < effects.size(); i++) {
         auto& effect = effects.at(i);
 
@@ -59,7 +65,7 @@ void ImGuiRenderer::draw()
 
         if (!ImGui::CollapsingHeader(title.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) continue;
 
-        std::string checkboxText = std::format("Enabled##{}", i);
+        auto checkboxText = _toUniqueId("Enabled", i);
         ImGui::Checkbox(checkboxText.c_str(), &effect.enabled);
 
         for (auto& param : effect.params) {
@@ -72,15 +78,30 @@ void ImGuiRenderer::draw()
             ImGui::SliderFloat(paramText.c_str(), value, paramSpec->min, paramSpec->max);
         }
 
-        // if (ImGui::TreeNodeEx("Node Controls // TODO")) {
-        //     ImGui::Button("Move Up");
-        //     ImGui::SameLine();
-        //     ImGui::Button("Move Down");
-        //     ImGui::SameLine();
-        //     ImGui::Button("Delete");
+        auto nodeText = _toUniqueId("Node", i);
+        auto moveUpText = _toUniqueId("Move Up", i);
+        auto moveDownText  = _toUniqueId("Move Down", i);
+        auto deleteText  = _toUniqueId("Delete", i);
 
-        //     ImGui::TreePop();
-        // }
+        if (ImGui::TreeNodeEx(nodeText.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            if (ImGui::Button(moveUpText.c_str())) {
+                queueMoveUp = i;
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button(moveDownText.c_str())) {
+                queueMoveDown = i;
+            }
+
+            ImGui::SameLine();
+
+            if (ImGui::Button(deleteText.c_str())) {
+                queueDelete = i;
+            }
+
+            ImGui::TreePop();
+        }
     }
 
     ImGui::Separator();
@@ -90,4 +111,19 @@ void ImGuiRenderer::draw()
     mAppData.mix = mixValue / 100.0f;
 
     ImGui::End();
+
+    if (queueMoveUp.has_value()) {
+        mAppData.moveUpEffect(queueMoveUp.value());
+    }
+    if (queueMoveDown.has_value()) {
+        mAppData.moveDownEffect(queueMoveDown.value());
+    }
+    if (queueDelete.has_value()) {
+        mAppData.deleteEffect(queueDelete.value());
+    }
+}
+
+std::string ImGuiRenderer::_toUniqueId(std::string_view str, const size_t index)
+{
+    return std::format("{}##{}", str, index);
 }
