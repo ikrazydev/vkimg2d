@@ -1,10 +1,12 @@
 #include "binary.hpp"
 
-#include <format>
+#include <fstream>
 
-std::vector<char> BinaryReader::readFromPath(std::string_view filepath)
+#include <io/path.hpp>
+
+std::vector<char> BinaryReader::readFromPath(const std::filesystem::path& filepath)
 {
-    std::ifstream file(filepath.data(), std::ios::ate | std::ios::binary);
+    std::ifstream file(filepath.string(), std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
         throw std::runtime_error("Failed to open file.");
@@ -21,7 +23,7 @@ std::vector<char> BinaryReader::readFromPath(std::string_view filepath)
     return buffer;
 }
 
-std::string BinaryReader::toShaderBinPath(std::string_view filepath)
+std::filesystem::path BinaryReader::toShaderBinPath(const std::filesystem::path& filepath)
 {
-    return std::format("shaders/bin/{}", filepath);
+    return Paths::ShadersBin / filepath;
 }

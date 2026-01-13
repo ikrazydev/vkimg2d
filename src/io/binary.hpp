@@ -1,13 +1,11 @@
 #pragma once
 
-#include <fstream>
+#include <filesystem>
 #include <vector>
-#include <string>
-#include <string_view>
 
 class BinaryReader
 {
 public:
-    static std::vector<char> readFromPath(std::string_view filepath);
-    static std::string toShaderBinPath(std::string_view filepath);
+    static std::vector<char> readFromPath(const std::filesystem::path& filepath);
+    static std::filesystem::path toShaderBinPath(const std::filesystem::path& filepath);
 };

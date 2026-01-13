@@ -2,7 +2,7 @@
 
 #include <ranges>
 
-Effect::Effect(std::string_view id, std::string_view displayName, std::string_view shaderPath)
+Effect::Effect(std::string_view id, std::string_view displayName, const std::filesystem::path& shaderPath)
     : mId{ id }
     , mDisplayName{ displayName }
     , mShaderPath{ shaderPath }
@@ -19,7 +19,7 @@ const std::string& Effect::getDisplayName() const noexcept
     return mDisplayName;
 }
 
-const std::string& Effect::getShaderPath() const noexcept
+const std::filesystem::path& Effect::getShaderPath() const noexcept
 {
     return mShaderPath;
 }

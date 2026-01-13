@@ -1,10 +1,11 @@
 #include "renderer.hpp"
 
-#include <io/binary.hpp>
-
 #include <iostream>
 #include <utility>
 #include <stdexcept>
+
+#include <io/binary.hpp>
+#include <io/path.hpp>
 
 #include <imgui.h>
 #include <backends/imgui_impl_glfw.h>
@@ -248,7 +249,7 @@ void VkRenderer::_createBuffers(const VkRendererConfig& config)
 
 void VkRenderer::_createTextures(const VkRendererConfig& config)
 {
-    auto image = Image{ "samples/sculpture_statue.jpg" };
+    auto image = Image{ Paths::Samples / "sculpture_statue.jpg" };
     auto loadedImage = image.load();
 
     TextureImageConfig imageConfig = {

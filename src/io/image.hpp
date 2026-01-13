@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <string>
 #include <string_view>
 #include <optional>
@@ -18,13 +19,13 @@ struct ImageLoadResult
 class Image
 {
 public:
-	Image(const std::string_view path);
+	explicit Image(const std::filesystem::path& path);
 	~Image();
 
 	ImageLoadResult load();
 private:
-	static ImageLoadResult loadFromPath(const std::string_view path);
+	static ImageLoadResult _loadFromPath(const std::filesystem::path& path);
 
-	std::string mPath;
+	std::filesystem::path mPath;
 	std::optional<ImageLoadResult> mLoadResult;
 };
