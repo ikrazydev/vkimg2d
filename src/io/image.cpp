@@ -26,7 +26,7 @@ ImageLoadResult Image::load()
 ImageLoadResult Image::_loadFromPath(const std::filesystem::path& path)
 {
     int texWidth, texHeight, texChannels;
-    stbi_uc* pixels = stbi_load(path.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
+    stbi_uc* pixels = stbi_load(path.string().c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 
     return ImageLoadResult{
         .texWidth = texWidth,
