@@ -2,7 +2,7 @@
 
 #include <vulkan/include.hpp>
 
-#include <string_view>
+#include <filesystem>
 #include <vector>
 
 class Device;
@@ -22,7 +22,7 @@ struct ShaderConfig
 class Shader
 {
 public:
-    Shader(const Device& device, std::string_view filepath, const ShaderConfig& config);
+    Shader(const Device& device, const std::filesystem::path& filepath, const ShaderConfig& config);
 
     const vk::ShaderModule& getModule() const;
     const vk::PipelineShaderStageCreateInfo& getStageInfo() const;

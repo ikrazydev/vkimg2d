@@ -1,6 +1,6 @@
 #pragma once
 
-#include <string>
+#include <filesystem>
 
 #include <vulkan/include.hpp>
 
@@ -10,8 +10,8 @@ class DescriptorLayout;
 
 struct GraphicsPipelineConfig
 {
-    std::string vertexShaderPath;
-    std::string fragmentShaderPath;
+    std::filesystem::path vertexShaderPath;
+    std::filesystem::path fragmentShaderPath;
 
     vk::Extent2D swapchainExtent;
 
