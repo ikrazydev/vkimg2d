@@ -12,7 +12,7 @@ if(APPLE)
         set(Vulkan_LIBRARIES "/usr/local/lib/libvulkan.dylib")
         set(Vulkan_INCLUDE_DIRS /usr/local/include)
     else()
-        message(FATAL_ERROR "MoltenVK not found on macOS! This is required for Vulkan support. Please install Vulkan SDK for macOS from https://vulkan.lunarg.com/sdk/home#mac")
+        message(FATAL_ERROR "MoltenVK not found on macOS. This is required for Vulkan support. Please install Vulkan SDK for macOS from https://vulkan.lunarg.com/sdk/home#mac")
     endif()
 else()
     find_package(Vulkan REQUIRED)
@@ -20,7 +20,7 @@ else()
 endif()
 
 if(NOT VULKAN_FOUND)
-    message(FATAL_ERROR "Vulkan/MoltenVK not found!")
+    message(FATAL_ERROR "Vulkan/MoltenVK not found.")
 endif()
 
 find_package(glfw3 REQUIRED)
@@ -79,7 +79,7 @@ add_executable(${PROJECT_NAME}
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/external/stb
+    ${CMAKE_CURRENT_SOURCE_DIR}/external
     ${CMAKE_CURRENT_SOURCE_DIR}/external/imgui
     ${Vulkan_INCLUDE_DIRS}
 )

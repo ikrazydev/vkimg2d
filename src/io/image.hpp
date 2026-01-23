@@ -5,7 +5,7 @@
 #include <string_view>
 #include <optional>
 
-#include <stb_image.h>
+#include <stb/stb_image.h>
 
 struct ImageLoadResult
 {
